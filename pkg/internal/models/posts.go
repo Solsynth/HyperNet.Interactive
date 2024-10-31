@@ -1,9 +1,10 @@
 package models
 
 import (
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"time"
 
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
 	"gorm.io/datatypes"
 )
 
@@ -23,23 +24,21 @@ const (
 )
 
 type Post struct {
-	hyper.BaseModel
+	cruda.BaseModel
 
-	Type       string            `json:"type"`
-	Body       datatypes.JSONMap `json:"body" gorm:"index:,type:gin"`
-	Language   string            `json:"language"`
-	Alias      *string           `json:"alias"`
-	AreaAlias  *string           `json:"area_alias"`
-	Tags       []Tag             `json:"tags" gorm:"many2many:post_tags"`
-	Categories []Category        `json:"categories" gorm:"many2many:post_categories"`
-	Reactions  []Reaction        `json:"reactions"`
-	Replies    []Post            `json:"replies" gorm:"foreignKey:ReplyID"`
-	ReplyID    *uint             `json:"reply_id"`
-	RepostID   *uint             `json:"repost_id"`
-	RealmID    *uint             `json:"realm_id"`
-	ReplyTo    *Post             `json:"reply_to" gorm:"foreignKey:ReplyID"`
-	RepostTo   *Post             `json:"repost_to" gorm:"foreignKey:RepostID"`
-	Realm      *Realm            `json:"realm"`
+	Type        string            `json:"type"`
+	Body        datatypes.JSONMap `json:"body" gorm:"index:,type:gin"`
+	Language    string            `json:"language"`
+	Alias       *string           `json:"alias"`
+	AliasPrefix *string           `json:"alias_prefix"`
+	Tags        []Tag             `json:"tags" gorm:"many2many:post_tags"`
+	Categories  []Category        `json:"categories" gorm:"many2many:post_categories"`
+	Reactions   []Reaction        `json:"reactions"`
+	Replies     []Post            `json:"replies" gorm:"foreignKey:ReplyID"`
+	ReplyID     *uint             `json:"reply_id"`
+	RepostID    *uint             `json:"repost_id"`
+	ReplyTo     *Post             `json:"reply_to" gorm:"foreignKey:ReplyID"`
+	RepostTo    *Post             `json:"repost_to" gorm:"foreignKey:RepostID"`
 
 	VisibleUsers   datatypes.JSONSlice[uint] `json:"visible_users_list"`
 	InvisibleUsers datatypes.JSONSlice[uint] `json:"invisible_users_list"`
@@ -56,8 +55,11 @@ type Post struct {
 	TotalUpvote   int `json:"total_upvote"`
 	TotalDownvote int `json:"total_downvote"`
 
-	AuthorID uint    `json:"author_id"`
-	Author   Account `json:"author"`
+	RealmID *uint        `json:"realm_id"`
+	Realm   *authm.Realm `json:"realm" gorm:"-"`
+
+	PublisherID uint      `json:"publisher_id"`
+	Publisher   Publisher `json:"publisher"`
 
 	Metric PostMetric `json:"metric" gorm:"-"`
 }

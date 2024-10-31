@@ -20,6 +20,6 @@ type Reaction struct {
 	Symbol   string           `json:"symbol"`
 	Attitude ReactionAttitude `json:"attitude"`
 
-	PostID    *uint `json:"post_id"`
-	AccountID uint  `json:"account_id"`
+	PostID    uint `json:"post_id"`
+	AccountID uint `json:"account_id"`
 }

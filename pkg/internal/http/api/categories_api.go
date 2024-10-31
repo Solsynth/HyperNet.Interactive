@@ -1,9 +1,9 @@
 package api
 
 import (
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/server/exts"
+	"git.solsynth.dev/hydrogen/interactive/pkg/internal/http/exts"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -28,7 +28,7 @@ func listCategories(c *fiber.Ctx) error {
 }
 
 func newCategory(c *fiber.Ctx) error {
-	if err := gap.H.EnsureGrantedPerm(c, "CreatePostCategories", true); err != nil {
+	if err := sec.EnsureGrantedPerm(c, "CreatePostCategories", true); err != nil {
 		return err
 	}
 
@@ -51,7 +51,7 @@ func newCategory(c *fiber.Ctx) error {
 }
 
 func editCategory(c *fiber.Ctx) error {
-	if err := gap.H.EnsureGrantedPerm(c, "CreatePostCategories", true); err != nil {
+	if err := sec.EnsureGrantedPerm(c, "CreatePostCategories", true); err != nil {
 		return err
 	}
 
@@ -80,7 +80,7 @@ func editCategory(c *fiber.Ctx) error {
 }
 
 func deleteCategory(c *fiber.Ctx) error {
-	if err := gap.H.EnsureGrantedPerm(c, "CreatePostCategories", true); err != nil {
+	if err := sec.EnsureGrantedPerm(c, "CreatePostCategories", true); err != nil {
 		return err
 	}
 

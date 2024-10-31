@@ -1,84 +1,24 @@
 package services
 
 import (
-	"context"
 	"fmt"
-	"time"
-
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
-	"git.solsynth.dev/hydrogen/dealer/pkg/proto"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/passport/pkg/authkit"
+	"git.solsynth.dev/hypernet/pusher/pkg/pushkit"
 	"github.com/rs/zerolog/log"
-	"github.com/samber/lo"
 )
 
-func GetAccountWithID(id uint) (models.Account, error) {
-	var account models.Account
+func GetAccountWithID(id uint) (models.Publisher, error) {
+	var account models.Publisher
 	if err := database.C.Where("id = ?", id).First(&account).Error; err != nil {
 		return account, fmt.Errorf("unable to get account by id: %v", err)
 	}
 	return account, nil
 }
 
-func ListAccountFriends(user models.Account) ([]models.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	pc, err := gap.H.GetServiceGrpcConn(hyper.ServiceTypeAuthProvider)
-	if err != nil {
-		return nil, fmt.Errorf("failed to listing account friends: %v", err)
-	}
-	result, err := proto.NewAuthClient(pc).ListUserFriends(ctx, &proto.ListUserRelativeRequest{
-		UserId:    uint64(user.ID),
-		IsRelated: true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to listing account friends: %v", err)
-	}
-
-	out := lo.Map(result.Data, func(item *proto.SimpleUserInfo, index int) uint {
-		return uint(item.Id)
-	})
-
-	var accounts []models.Account
-	if err = database.C.Where("id IN ?", out).Find(&accounts).Error; err != nil {
-		return nil, fmt.Errorf("failed to linking listed account friends: %v", err)
-	}
-
-	return accounts, nil
-}
-
-func ListAccountBlockedUsers(user models.Account) ([]models.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	pc, err := gap.H.GetServiceGrpcConn(hyper.ServiceTypeAuthProvider)
-	if err != nil {
-		return nil, fmt.Errorf("failed to listing account blocked users: %v", err)
-	}
-	result, err := proto.NewAuthClient(pc).ListUserBlocklist(ctx, &proto.ListUserRelativeRequest{
-		UserId:    uint64(user.ID),
-		IsRelated: true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to listing account blocked users: %v", err)
-	}
-
-	out := lo.Map(result.Data, func(item *proto.SimpleUserInfo, index int) uint {
-		return uint(item.Id)
-	})
-
-	var accounts []models.Account
-	if err = database.C.Where("id IN ?", out).Find(&accounts).Error; err != nil {
-		return nil, fmt.Errorf("failed to linking listed blocked users: %v", err)
-	}
-
-	return accounts, nil
-}
-
-func ModifyPosterVoteCount(user models.Account, isUpvote bool, delta int) error {
+func ModifyPosterVoteCount(user models.Publisher, isUpvote bool, delta int) error {
 	if isUpvote {
 		user.TotalUpvote += delta
 	} else {
@@ -88,32 +28,29 @@ func ModifyPosterVoteCount(user models.Account, isUpvote bool, delta int) error 
 	return database.C.Save(&user).Error
 }
 
-func NotifyPosterAccount(user models.Account, post models.Post, title, body string, subtitle *string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	pc, err := gap.H.GetServiceGrpcConn(hyper.ServiceTypeAuthProvider)
-	if err != nil {
-		return err
+func NotifyPosterAccount(pub models.Publisher, post models.Post, title, body string, subtitle ...string) error {
+	if pub.AccountID == nil {
+		return nil
 	}
-	_, err = proto.NewNotifierClient(pc).NotifyUser(ctx, &proto.NotifyUserRequest{
-		UserId: uint64(user.ID),
-		Notify: &proto.NotifyRequest{
-			Topic:    "interactive.feedback",
-			Title:    title,
-			Subtitle: subtitle,
-			Body:     body,
-			Metadata: hyper.EncodeMap(map[string]any{
-				"related_post": TruncatePostContent(post),
-			}),
-			IsRealtime:  false,
-			IsForcePush: true,
+
+	if len(subtitle) == 0 {
+		subtitle = append(subtitle, "")
+	}
+
+	err := authkit.NotifyUser(gap.Nx, uint64(*pub.AccountID), pushkit.Notification{
+		Topic:    "interactive.feedback",
+		Title:    title,
+		Subtitle: subtitle[0],
+		Body:     body,
+		Priority: 4,
+		Metadata: map[string]any{
+			"related_post": TruncatePostContent(post),
 		},
 	})
 	if err != nil {
 		log.Warn().Err(err).Msg("An error occurred when notify account...")
 	} else {
-		log.Debug().Uint("uid", user.ID).Msg("Notified account.")
+		log.Debug().Uint("uid", pub.ID).Msg("Notified account.")
 	}
 
 	return err

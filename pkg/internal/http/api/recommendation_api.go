@@ -3,8 +3,11 @@ package api
 import (
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
+	"git.solsynth.dev/hypernet/nexus/pkg/proto"
+	"git.solsynth.dev/hypernet/passport/pkg/authkit"
+	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 )
@@ -51,10 +54,10 @@ func listRecommendationNews(c *fiber.Ctx) error {
 }
 
 func listRecommendationFriends(c *fiber.Ctx) error {
-	if err := gap.H.EnsureAuthenticated(c); err != nil {
+	if err := sec.EnsureAuthenticated(c); err != nil {
 		return err
 	}
-	user := c.Locals("user").(models.Account)
+	user := c.Locals("user").(authm.Account)
 
 	take := c.QueryInt("take", 0)
 	offset := c.QueryInt("offset", 0)
@@ -66,9 +69,9 @@ func listRecommendationFriends(c *fiber.Ctx) error {
 		return err
 	}
 
-	friends, _ := services.ListAccountFriends(user)
-	friendList := lo.Map(friends, func(item models.Account, index int) uint {
-		return item.ID
+	friends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
+	friendList := lo.Map(friends, func(item *proto.UserInfo, index int) uint {
+		return uint(item.GetId())
 	})
 
 	tx = tx.Where("author_id IN ?", friendList)

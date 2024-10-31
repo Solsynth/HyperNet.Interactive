@@ -23,7 +23,7 @@ func listPostReplies(c *fiber.Ctx) error {
 	}
 
 	if len(c.Query("author")) > 0 {
-		var author models.Account
+		var author models.Publisher
 		if err := database.C.Where(&hyper.BaseUser{Name: c.Query("author")}).First(&author).Error; err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
@@ -66,7 +66,7 @@ func listPostFeaturedReply(c *fiber.Ctx) error {
 	}
 
 	if len(c.Query("author")) > 0 {
-		var author models.Account
+		var author models.Publisher
 		if err := database.C.Where(&hyper.BaseUser{Name: c.Query("author")}).First(&author).Error; err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}

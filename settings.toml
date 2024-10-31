@@ -1,23 +1,13 @@
 id = "interactive01"
 
-bind = "0.0.0.0:8445"
-grpc_bind = "0.0.0.0:7445"
-domain = "im.solsynth.dev"
-secret = "LtTjzAGFLshwXhN4ZD4nG5KlMv1MWcsvfv03TSZYnT1VhiAnLIZFTnHUwR0XhGgi"
+bind = "0.0.0.0:8005"
+grpc_bind = "0.0.0.0:7005"
+
+nexus_addr = "localhost:7001"
 
 [debug]
 database = true
 print_routes = false
 
-[dealer]
-addr = "127.0.0.1:7442"
-
 [security]
-cookie_domain = "localhost"
-cookie_samesite = "Lax"
-access_token_duration = 300
-refresh_token_duration = 2592000
-
-[database]
-dsn = "host=localhost user=postgres password=password dbname=hy_interactive port=5432 sslmode=disable"
-prefix = "interactive_"
+internal_public_key = "keys/internal_public_key.pem"

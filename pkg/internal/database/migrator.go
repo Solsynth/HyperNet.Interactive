@@ -6,8 +6,7 @@ import (
 )
 
 var AutoMaintainRange = []any{
-	&models.Account{},
-	&models.Realm{},
+	&models.Publisher{},
 	&models.Category{},
 	&models.Tag{},
 	&models.Post{},

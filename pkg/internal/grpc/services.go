@@ -23,7 +23,7 @@ func (v *Server) BroadcastDeletion(ctx context.Context, request *proto.DeletionR
 				database.C.Delete(model, "account_id = ?", numericId)
 			}
 		}
-		database.C.Delete(&models.Account{}, "id = ?", numericId)
+		database.C.Delete(&models.Publisher{}, "id = ?", numericId)
 	}
 
 	return &proto.DeletionResponse{}, nil

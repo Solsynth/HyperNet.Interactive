@@ -2,6 +2,10 @@ package api
 
 import (
 	"fmt"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
+	"git.solsynth.dev/hypernet/passport/pkg/authkit"
+	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
@@ -9,30 +13,20 @@ import (
 	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hydrogen/interactive/pkg/internal/http/exts"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/server/exts"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 )
 
 func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
-	realm := c.Query("realm")
-
 	tx = services.FilterPostDraft(tx)
 
-	if user, authenticated := c.Locals("user").(models.Account); authenticated {
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
 		tx = services.FilterPostWithUserContext(tx, &user)
 	} else {
 		tx = services.FilterPostWithUserContext(tx, nil)
-	}
-
-	if len(realm) > 0 {
-		if realm, err := services.GetRealmWithAlias(realm); err != nil {
-			return tx, fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("realm was not found: %v", err))
-		} else {
-			tx = services.FilterPostWithRealm(tx, realm.ID)
-		}
 	}
 
 	if c.QueryBool("noReply", true) {
@@ -40,7 +34,7 @@ func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 	}
 
 	if len(c.Query("author")) > 0 {
-		var author models.Account
+		var author models.Publisher
 		if err := database.C.Where(&hyper.BaseUser{Name: c.Query("author")}).First(&author).Error; err != nil {
 			return tx, fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
@@ -65,7 +59,7 @@ func getPost(c *fiber.Ctx) error {
 
 	tx := services.FilterPostDraft(database.C)
 
-	if user, authenticated := c.Locals("user").(models.Account); authenticated {
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
 		tx = services.FilterPostWithUserContext(tx, &user)
 	} else {
 		tx = services.FilterPostWithUserContext(tx, nil)
@@ -218,10 +212,10 @@ func listDraftPost(c *fiber.Ctx) error {
 	take := c.QueryInt("take", 0)
 	offset := c.QueryInt("offset", 0)
 
-	if err := gap.H.EnsureAuthenticated(c); err != nil {
+	if err := sec.EnsureAuthenticated(c); err != nil {
 		return err
 	}
-	user := c.Locals("user").(models.Account)
+	user := c.Locals("user").(authm.Account)
 
 	tx := services.FilterPostWithAuthorDraft(database.C, user.ID)
 
@@ -250,16 +244,26 @@ func listDraftPost(c *fiber.Ctx) error {
 }
 
 func deletePost(c *fiber.Ctx) error {
-	if err := gap.H.EnsureAuthenticated(c); err != nil {
+	if err := sec.EnsureAuthenticated(c); err != nil {
 		return err
 	}
-	user := c.Locals("user").(models.Account)
+	user := c.Locals("user").(authm.Account)
 	id, _ := c.ParamsInt("postId", 0)
+
+	publisherId := c.QueryInt("publisherId", 0)
+	if publisherId <= 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "missing publisher id in request")
+	}
+
+	publisher, err := services.GetPublisher(uint(publisherId), user.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
 
 	var item models.Post
 	if err := database.C.Where(models.Post{
-		BaseModel: hyper.BaseModel{ID: uint(id)},
-		AuthorID:  user.ID,
+		BaseModel:   cruda.BaseModel{ID: uint(id)},
+		PublisherID: publisher.ID,
 	}).First(&item).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
@@ -267,12 +271,11 @@ func deletePost(c *fiber.Ctx) error {
 	if err := services.DeletePost(item); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
-		_ = gap.H.RecordAuditLog(
-			user.ID,
+		_ = authkit.AddEventExt(
+			gap.Nx,
 			"posts.delete",
 			strconv.Itoa(int(item.ID)),
-			c.IP(),
-			c.Get(fiber.HeaderUserAgent),
+			c,
 		)
 	}
 
@@ -280,10 +283,10 @@ func deletePost(c *fiber.Ctx) error {
 }
 
 func reactPost(c *fiber.Ctx) error {
-	if err := gap.H.EnsureGrantedPerm(c, "CreateReactions", true); err != nil {
+	if err := sec.EnsureGrantedPerm(c, "CreateReactions", true); err != nil {
 		return err
 	}
-	user := c.Locals("user").(models.Account)
+	user := c.Locals("user").(authm.Account)
 
 	var data struct {
 		Symbol   string                  `json:"symbol"`
@@ -304,18 +307,17 @@ func reactPost(c *fiber.Ctx) error {
 	if err := database.C.Where("id = ?", c.Params("postId")).Select("id").First(&res).Error; err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("unable to find post to react: %v", err))
 	} else {
-		reaction.PostID = &res.ID
+		reaction.PostID = res.ID
 	}
 
 	if positive, reaction, err := services.ReactPost(user, reaction); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
-		_ = gap.H.RecordAuditLog(
-			user.ID,
+		_ = authkit.AddEventExt(
+			gap.Nx,
 			"posts.react",
 			strconv.Itoa(int(res.ID)),
-			c.IP(),
-			c.Get(fiber.HeaderUserAgent),
+			c,
 		)
 
 		return c.Status(lo.Ternary(positive, fiber.StatusCreated, fiber.StatusNoContent)).JSON(reaction)
@@ -323,10 +325,10 @@ func reactPost(c *fiber.Ctx) error {
 }
 
 func pinPost(c *fiber.Ctx) error {
-	if err := gap.H.EnsureAuthenticated(c); err != nil {
+	if err := sec.EnsureAuthenticated(c); err != nil {
 		return err
 	}
-	user := c.Locals("user").(models.Account)
+	user := c.Locals("user").(authm.Account)
 
 	var res models.Post
 	if err := database.C.Where("id = ? AND author_id = ?", c.Params("postId"), user.ID).First(&res).Error; err != nil {
@@ -336,24 +338,20 @@ func pinPost(c *fiber.Ctx) error {
 	if status, err := services.PinPost(res); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	} else if status {
-		_ = gap.H.RecordAuditLog(
-			user.ID,
+		_ = authkit.AddEventExt(
+			gap.Nx,
 			"posts.pin",
 			strconv.Itoa(int(res.ID)),
-			c.IP(),
-			c.Get(fiber.HeaderUserAgent),
+			c,
 		)
-
 		return c.SendStatus(fiber.StatusOK)
 	} else {
-		_ = gap.H.RecordAuditLog(
-			user.ID,
+		_ = authkit.AddEventExt(
+			gap.Nx,
 			"posts.unpin",
 			strconv.Itoa(int(res.ID)),
-			c.IP(),
-			c.Get(fiber.HeaderUserAgent),
+			c,
 		)
-
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }

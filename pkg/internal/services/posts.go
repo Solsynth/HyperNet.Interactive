@@ -3,6 +3,10 @@ package services
 import (
 	"errors"
 	"fmt"
+	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/nexus/pkg/proto"
+	"git.solsynth.dev/hypernet/passport/pkg/authkit"
+	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"regexp"
 	"strconv"
 	"time"
@@ -11,12 +15,11 @@ import (
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
-	"github.com/spf13/viper"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
-func FilterPostWithUserContext(tx *gorm.DB, user *models.Account) *gorm.DB {
+func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	if user == nil {
 		return tx.Where("visibility = ?", models.PostVisibilityAll)
 	}
@@ -28,13 +31,13 @@ func FilterPostWithUserContext(tx *gorm.DB, user *models.Account) *gorm.DB {
 		NoneVisibility     = models.PostVisibilityNone
 	)
 
-	friends, _ := ListAccountFriends(*user)
-	allowlist := lo.Map(friends, func(item models.Account, index int) uint {
-		return item.ID
+	friends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
+	allowlist := lo.Map(friends, func(item *proto.UserInfo, index int) uint {
+		return uint(item.GetId())
 	})
-	blocked, _ := ListAccountBlockedUsers(*user)
-	blocklist := lo.Map(blocked, func(item models.Account, index int) uint {
-		return item.ID
+	blocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
+	blocklist := lo.Map(blocked, func(item *proto.UserInfo, index int) uint {
+		return uint(item.GetId())
 	})
 
 	tx = tx.Where(
@@ -54,17 +57,15 @@ func FilterPostWithUserContext(tx *gorm.DB, user *models.Account) *gorm.DB {
 }
 
 func FilterPostWithCategory(tx *gorm.DB, alias string) *gorm.DB {
-	prefix := viper.GetString("database.prefix")
-	return tx.Joins(fmt.Sprintf("JOIN %spost_categories ON %sposts.id = %spost_categories.post_id", prefix, prefix, prefix)).
-		Joins(fmt.Sprintf("JOIN %scategories ON %scategories.id = %spost_categories.category_id", prefix, prefix, prefix)).
-		Where(fmt.Sprintf("%scategories.alias = ?", prefix), alias)
+	return tx.Joins("JOIN post_categories ON posts.id = post_categories.post_id").
+		Joins("JOIN categories ON categories.id = post_categories.category_id").
+		Where("categories.alias = ?", alias)
 }
 
 func FilterPostWithTag(tx *gorm.DB, alias string) *gorm.DB {
-	prefix := viper.GetString("database.prefix")
-	return tx.Joins(fmt.Sprintf("JOIN %spost_tags ON %sposts.id = %spost_tags.post_id", prefix, prefix, prefix)).
-		Joins(fmt.Sprintf("JOIN %stags ON %stags.id = %spost_tags.tag_id", prefix, prefix, prefix)).
-		Where(fmt.Sprintf("%stags.alias = ?", prefix), alias)
+	return tx.Joins("JOIN post_tags ON posts.id = post_tags.post_id").
+		Joins("JOIN tags ON tags.id = post_tags.tag_id").
+		Where("tags.alias = ?", alias)
 }
 
 func FilterPostWithRealm(tx *gorm.DB, id uint) *gorm.DB {
@@ -289,7 +290,7 @@ func EnsurePostCategoriesAndTags(item models.Post) (models.Post, error) {
 	return item, nil
 }
 
-func NewPost(user models.Account, item models.Post) (models.Post, error) {
+func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 	if item.Alias != nil && len(*item.Alias) == 0 {
 		item.Alias = nil
 	}
@@ -302,9 +303,9 @@ func NewPost(user models.Account, item models.Post) (models.Post, error) {
 	}
 
 	if item.Realm != nil {
-		item.AreaAlias = &item.Realm.Alias
+		item.AliasPrefix = &item.Realm.Alias
 	} else {
-		item.AreaAlias = &user.Name
+		item.AliasPrefix = &user.Name
 	}
 
 	log.Debug().Any("body", item.Body).Msg("Posting a post...")
@@ -314,16 +315,6 @@ func NewPost(user models.Account, item models.Post) (models.Post, error) {
 	item, err := EnsurePostCategoriesAndTags(item)
 	if err != nil {
 		return item, err
-	}
-
-	if item.RealmID != nil {
-		log.Debug().Uint("id", *item.RealmID).Msg("Looking for post author realm...")
-		member, err := GetRealmMember(*item.RealmID, user.ID)
-		if err != nil {
-			return item, fmt.Errorf("you aren't a part of that realm: %v", err)
-		} else if !item.Realm.IsCommunity && member.PowerLevel < 25 {
-			return item, fmt.Errorf("you need has power level above 25 of a realm or in a community realm to post")
-		}
 	}
 
 	log.Debug().Msg("Saving post record into database...")
@@ -338,14 +329,14 @@ func NewPost(user models.Account, item models.Post) (models.Post, error) {
 			Where("id = ?", item.ReplyID).
 			Preload("Author").
 			First(&op).Error; err == nil {
-			if op.Author.ID != user.ID {
-				log.Debug().Uint("user", op.AuthorID).Msg("Notifying the original poster their post got replied...")
+			if op.Publisher.AccountID != nil && op.Publisher.ID != user.ID {
+				log.Debug().Uint("user", *op.Publisher.AccountID).Msg("Notifying the original poster their post got replied...")
 				err = NotifyPosterAccount(
-					op.Author,
+					op.Publisher,
 					op,
 					"Post got replied",
 					fmt.Sprintf("%s (%s) replied your post (#%d).", user.Nick, user.Name, op.ID),
-					lo.ToPtr(fmt.Sprintf("%s replied you", user.Nick)),
+					fmt.Sprintf("%s replied you", user.Nick),
 				)
 				if err != nil {
 					log.Error().Err(err).Msg("An error occurred when notifying user...")
@@ -392,9 +383,9 @@ func EditPost(item models.Post) (models.Post, error) {
 	}
 
 	if item.Realm != nil {
-		item.AreaAlias = &item.Realm.Alias
+		item.AliasPrefix = &item.Realm.Alias
 	} else {
-		item.AreaAlias = &item.Author.Name
+		item.AliasPrefix = &item.Publisher.Name
 	}
 
 	item, err := EnsurePostCategoriesAndTags(item)
@@ -411,7 +402,7 @@ func DeletePost(item models.Post) error {
 	return database.C.Delete(&item).Error
 }
 
-func ReactPost(user models.Account, reaction models.Reaction) (bool, models.Reaction, error) {
+func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.Reaction, error) {
 	var op models.Post
 	if err := database.C.
 		Where("id = ?", reaction.PostID).
@@ -422,13 +413,13 @@ func ReactPost(user models.Account, reaction models.Reaction) (bool, models.Reac
 
 	if err := database.C.Where(reaction).First(&reaction).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			if op.Author.ID != user.ID {
+			if op.Publisher.AccountID != nil && *op.Publisher.AccountID != user.ID {
 				err = NotifyPosterAccount(
-					op.Author,
+					op.Publisher,
 					op,
 					"Post got reacted",
 					fmt.Sprintf("%s (%s) reacted your post a %s.", user.Nick, user.Name, reaction.Symbol),
-					lo.ToPtr(fmt.Sprintf("%s reacted you", user.Nick)),
+					fmt.Sprintf("%s reacted you", user.Nick),
 				)
 				if err != nil {
 					log.Error().Err(err).Msg("An error occurred when notifying user...")
@@ -437,7 +428,7 @@ func ReactPost(user models.Account, reaction models.Reaction) (bool, models.Reac
 
 			err = database.C.Save(&reaction).Error
 			if err == nil && reaction.Attitude != models.AttitudeNeutral {
-				_ = ModifyPosterVoteCount(op.Author, reaction.Attitude == models.AttitudePositive, 1)
+				_ = ModifyPosterVoteCount(op.Publisher, reaction.Attitude == models.AttitudePositive, 1)
 
 				if reaction.Attitude == models.AttitudePositive {
 					op.TotalUpvote++
@@ -454,7 +445,7 @@ func ReactPost(user models.Account, reaction models.Reaction) (bool, models.Reac
 	} else {
 		err = database.C.Delete(&reaction).Error
 		if err == nil && reaction.Attitude != models.AttitudeNeutral {
-			_ = ModifyPosterVoteCount(op.Author, reaction.Attitude == models.AttitudePositive, -1)
+			_ = ModifyPosterVoteCount(op.Publisher, reaction.Attitude == models.AttitudePositive, -1)
 
 			if reaction.Attitude == models.AttitudePositive {
 				op.TotalUpvote--

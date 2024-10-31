@@ -1,9 +1,9 @@
 package models
 
-import "git.solsynth.dev/hydrogen/dealer/pkg/hyper"
+import "git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 
 type Tag struct {
-	hyper.BaseModel
+	cruda.BaseModel
 
 	Alias       string `json:"alias" gorm:"uniqueIndex" validate:"lowercase"`
 	Name        string `json:"name"`
@@ -12,7 +12,7 @@ type Tag struct {
 }
 
 type Category struct {
-	hyper.BaseModel
+	cruda.BaseModel
 
 	Alias       string `json:"alias" gorm:"uniqueIndex" validate:"lowercase,alphanum"`
 	Name        string `json:"name"`

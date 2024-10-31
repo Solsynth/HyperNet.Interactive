@@ -1,26 +1,15 @@
 package services
 
 import (
+	"fmt"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
-	"github.com/gofiber/fiber/v2"
 )
 
-func GetPublisher(alias string) (any, error) {
-	realm, err := GetRealmWithAlias(alias)
-	if err == nil {
-		return fiber.Map{
-			"type": "realm",
-			"data": realm,
-		}, nil
+func GetPublisher(id uint, userID uint) (models.Publisher, error) {
+	var publisher models.Publisher
+	if err := database.C.Where("id = ? AND account_id = ?", id, userID).First(&publisher).Error; err != nil {
+		return publisher, fmt.Errorf("unable to get publisher: %v", err)
 	}
-
-	var account models.Account
-	if err = database.C.Where("name = ?", alias).First(&account).Error; err != nil {
-		return nil, err
-	}
-	return fiber.Map{
-		"type": "account",
-		"data": account,
-	}, nil
+	return publisher, nil
 }

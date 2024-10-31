@@ -2,9 +2,9 @@ package services
 
 import (
 	"errors"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"strings"
 
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
 	"gorm.io/gorm"
@@ -28,7 +28,7 @@ func GetCategory(alias string) (models.Category, error) {
 func GetCategoryWithID(id uint) (models.Category, error) {
 	var category models.Category
 	if err := database.C.Where(models.Category{
-		BaseModel: hyper.BaseModel{ID: id},
+		BaseModel: cruda.BaseModel{ID: id},
 	}).First(&category).Error; err != nil {
 		return category, err
 	}
@@ -64,7 +64,7 @@ func DeleteCategory(category models.Category) error {
 func GetTagWithID(id uint) (models.Tag, error) {
 	var tag models.Tag
 	if err := database.C.Where(models.Tag{
-		BaseModel: hyper.BaseModel{ID: id},
+		BaseModel: cruda.BaseModel{ID: id},
 	}).First(&tag).Error; err != nil {
 		return tag, err
 	}

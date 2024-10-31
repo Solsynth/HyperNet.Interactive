@@ -2,42 +2,51 @@ package gap
 
 import (
 	"fmt"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex"
+	"git.solsynth.dev/hypernet/pusher/pkg/pushkit/pushcon"
+	"github.com/samber/lo"
 	"strings"
 
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
-	"git.solsynth.dev/hydrogen/dealer/pkg/proto"
+	"git.solsynth.dev/hypernet/nexus/pkg/proto"
 	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/viper"
 )
 
-var H *hyper.HyperConn
+var Nx *nex.Conn
+var Px *pushcon.Conn
 
-func RegisterService() error {
+func InitializeToNexus() error {
 	grpcBind := strings.SplitN(viper.GetString("grpc_bind"), ":", 2)
 	httpBind := strings.SplitN(viper.GetString("bind"), ":", 2)
 
-	outboundIp, _ := GetOutboundIP()
+	outboundIp, _ := nex.GetOutboundIP()
 
 	grpcOutbound := fmt.Sprintf("%s:%s", outboundIp, grpcBind[1])
 	httpOutbound := fmt.Sprintf("%s:%s", outboundIp, httpBind[1])
 
 	var err error
-	H, err = hyper.NewHyperConn(viper.GetString("dealer.addr"), &proto.ServiceInfo{
+	Nx, err = nex.NewNexusConn(viper.GetString("nexus_addr"), &proto.ServiceInfo{
 		Id:       viper.GetString("id"),
-		Type:     hyper.ServiceTypeInteractiveProvider,
-		Label:    "Passport",
+		Type:     "co",
+		Label:    "Interactive",
 		GrpcAddr: grpcOutbound,
-		HttpAddr: &httpOutbound,
+		HttpAddr: lo.ToPtr("http://" + httpOutbound + "/api"),
 	})
 	if err == nil {
 		go func() {
-			err := H.KeepRegisterService()
+			err := Nx.RunRegistering()
 			if err != nil {
 				log.Error().Err(err).Msg("An error occurred while registering service...")
 			}
 		}()
 	}
 
+	Px, err = pushcon.NewConn(Nx)
+	if err != nil {
+		return fmt.Errorf("error during initialize pushcon: %v", err)
+	}
+
 	return err
+
 }
