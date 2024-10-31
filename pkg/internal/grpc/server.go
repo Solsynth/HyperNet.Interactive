@@ -9,14 +9,14 @@ import (
 	"net"
 )
 
-type Server struct {
+type App struct {
 	proto.UnimplementedDirectoryServiceServer
 
 	srv *grpc.Server
 }
 
-func NewGrpc() *Server {
-	server := &Server{
+func NewGrpc() *App {
+	server := &App{
 		srv: grpc.NewServer(),
 	}
 
@@ -28,7 +28,7 @@ func NewGrpc() *Server {
 	return server
 }
 
-func (v *Server) Listen() error {
+func (v *App) Listen() error {
 	listener, err := net.Listen("tcp", viper.GetString("grpc_bind"))
 	if err != nil {
 		return err

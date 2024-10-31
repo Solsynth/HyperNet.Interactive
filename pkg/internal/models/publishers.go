@@ -19,9 +19,7 @@ type Publisher struct {
 	Avatar      string `json:"avatar"`
 	Banner      string `json:"banner"`
 
-	Posts         []Post         `json:"posts" gorm:"foreignKey:AuthorID"`
-	Reactions     []Reaction     `json:"reactions"`
-	Subscriptions []Subscription `json:"subscriptions" gorm:"foreginKey:FollowerID"`
+	Posts []Post `json:"posts"`
 
 	TotalUpvote   int `json:"total_upvote"`
 	TotalDownvote int `json:"total_downvote"`

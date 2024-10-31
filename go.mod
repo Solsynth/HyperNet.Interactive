@@ -3,7 +3,10 @@ module git.solsynth.dev/hydrogen/interactive
 go 1.23.2
 
 require (
-	git.solsynth.dev/hydrogen/dealer v0.0.0-20241015165700-60e4bbfd9782
+	git.solsynth.dev/hypernet/nexus v0.0.0-20241031133156-6bb8eab3fcd8
+	git.solsynth.dev/hypernet/passport v0.0.0-20241031144010-d1f1183beb36
+	git.solsynth.dev/hypernet/pusher v0.0.0-20241026153052-cd2c326efa4e
+	github.com/fatih/color v1.17.0
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/json-iterator/go v1.1.12
@@ -19,17 +22,17 @@ require (
 )
 
 require (
-	git.solsynth.dev/hypernet/nexus v0.0.0-20241031133156-6bb8eab3fcd8 // indirect
-	git.solsynth.dev/hypernet/passport v0.0.0-20241031144010-d1f1183beb36 // indirect
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
-	github.com/fatih/color v1.17.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-playground/form v3.1.4+incompatible // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
+	github.com/goccy/go-json v0.10.3 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/consul/api v1.30.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -59,6 +62,9 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/nats-io/nats.go v1.37.0 // indirect
+	github.com/nats-io/nkeys v0.4.7 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/pkg/errors v0.9.1 // indirect

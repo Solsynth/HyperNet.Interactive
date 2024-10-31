@@ -68,7 +68,7 @@ func main() {
 	quartz.AddFunc("@every 60m", services.DoAutoDatabaseCleanup)
 	quartz.Start()
 
-	// Server
+	// App
 	go http.NewServer().Listen()
 
 	go grpc.NewGrpc().Listen()

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
@@ -13,7 +12,7 @@ func listUserPinnedPost(c *fiber.Ctx) error {
 
 	var user models.Publisher
 	if err := database.C.
-		Where(&hyper.BaseUser{Name: account}).
+		Where("name = ?", account).
 		First(&user).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

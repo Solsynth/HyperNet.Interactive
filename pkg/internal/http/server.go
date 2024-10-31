@@ -57,7 +57,7 @@ func NewServer() *App {
 	}))
 
 	app.Use(sec.ContextMiddleware(IReader))
-	app.Use(authkit.GetAccountFromUserInfo)
+	app.Use(authkit.ParseAccountMiddleware)
 
 	api.MapAPIs(app, "/api")
 

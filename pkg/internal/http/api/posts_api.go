@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/http/exts"
@@ -35,7 +34,7 @@ func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 
 	if len(c.Query("author")) > 0 {
 		var author models.Publisher
-		if err := database.C.Where(&hyper.BaseUser{Name: c.Query("author")}).First(&author).Error; err != nil {
+		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
 			return tx, fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
 		tx = tx.Where("author_id = ?", author.ID)

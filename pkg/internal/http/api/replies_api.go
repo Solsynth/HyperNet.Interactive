@@ -2,8 +2,6 @@ package api
 
 import (
 	"fmt"
-
-	"git.solsynth.dev/hydrogen/dealer/pkg/hyper"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
@@ -24,7 +22,7 @@ func listPostReplies(c *fiber.Ctx) error {
 
 	if len(c.Query("author")) > 0 {
 		var author models.Publisher
-		if err := database.C.Where(&hyper.BaseUser{Name: c.Query("author")}).First(&author).Error; err != nil {
+		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
 		tx = tx.Where("author_id = ?", author.ID)
@@ -67,7 +65,7 @@ func listPostFeaturedReply(c *fiber.Ctx) error {
 
 	if len(c.Query("author")) > 0 {
 		var author models.Publisher
-		if err := database.C.Where(&hyper.BaseUser{Name: c.Query("author")}).First(&author).Error; err != nil {
+		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
 		tx = tx.Where("author_id = ?", author.ID)
