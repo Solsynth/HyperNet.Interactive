@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
@@ -47,6 +48,9 @@ func getPublisher(c *fiber.Ctx) error {
 }
 
 func listOwnedPublisher(c *fiber.Ctx) error {
+	if err := sec.EnsureAuthenticated(c); err != nil {
+		return err
+	}
 	user := c.Locals("user").(authm.Account)
 
 	var publishers []models.Publisher
@@ -100,6 +104,9 @@ func createOrganizationPublisher(c *fiber.Ctx) error {
 }
 
 func editPublisher(c *fiber.Ctx) error {
+	if err := sec.EnsureAuthenticated(c); err != nil {
+		return err
+	}
 	user := c.Locals("user").(authm.Account)
 
 	id, _ := c.ParamsInt("publisherId", 0)
@@ -138,6 +145,9 @@ func editPublisher(c *fiber.Ctx) error {
 }
 
 func deletePublisher(c *fiber.Ctx) error {
+	if err := sec.EnsureAuthenticated(c); err != nil {
+		return err
+	}
 	user := c.Locals("user").(authm.Account)
 
 	id, _ := c.ParamsInt("publisherId", 0)
