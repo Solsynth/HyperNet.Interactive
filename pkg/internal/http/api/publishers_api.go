@@ -2,11 +2,11 @@ package api
 
 import (
 	"fmt"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/http/exts"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"

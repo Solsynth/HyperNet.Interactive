@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/http/exts"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 )

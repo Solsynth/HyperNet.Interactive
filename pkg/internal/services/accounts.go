@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	"git.solsynth.dev/hypernet/pusher/pkg/pushkit"
 	"github.com/rs/zerolog/log"

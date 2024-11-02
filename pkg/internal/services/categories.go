@@ -5,8 +5,8 @@ import (
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"strings"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"gorm.io/gorm"
 )
 

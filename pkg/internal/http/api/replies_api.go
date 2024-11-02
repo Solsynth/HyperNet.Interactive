@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"github.com/gofiber/fiber/v2"
 )
 

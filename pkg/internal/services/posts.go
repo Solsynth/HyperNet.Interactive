@@ -3,7 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/proto"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 	"gorm.io/datatypes"

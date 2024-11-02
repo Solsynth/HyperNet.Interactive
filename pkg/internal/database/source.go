@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"

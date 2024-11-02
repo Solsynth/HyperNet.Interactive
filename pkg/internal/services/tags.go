@@ -1,8 +1,8 @@
 package services
 
 import (
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 )
 
 func ListTags(take int, offset int) ([]models.Tag, error) {

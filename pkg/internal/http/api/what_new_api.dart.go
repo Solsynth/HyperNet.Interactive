@@ -1,8 +1,8 @@
 package api
 
 import (
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/database"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"github.com/gofiber/fiber/v2"

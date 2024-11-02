@@ -5,7 +5,7 @@ import (
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	"strings"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/http/api"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/api"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
@@ -25,8 +25,8 @@ func NewServer() *App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		EnableIPValidation:    true,
-		ServerHeader:          "Hydrogen.Interactive",
-		AppName:               "Hydrogen.Interactive",
+		ServerHeader:          "Hypernet.Interactive",
+		AppName:               "Hypernet.Interactive",
 		ProxyHeader:           fiber.HeaderXForwardedFor,
 		JSONEncoder:           jsoniter.ConfigCompatibleWithStandardLibrary.Marshal,
 		JSONDecoder:           jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal,

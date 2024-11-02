@@ -3,7 +3,7 @@ package services
 import (
 	"fmt"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )

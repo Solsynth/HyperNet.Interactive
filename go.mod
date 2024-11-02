@@ -1,4 +1,4 @@
-module git.solsynth.dev/hydrogen/interactive
+module git.solsynth.dev/hypernet/interactive
 
 go 1.23.2
 

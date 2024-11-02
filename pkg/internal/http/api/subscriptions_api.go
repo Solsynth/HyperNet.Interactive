@@ -7,8 +7,8 @@ import (
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"strconv"
 
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
-	"git.solsynth.dev/hydrogen/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"github.com/gofiber/fiber/v2"
 )
 
