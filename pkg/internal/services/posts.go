@@ -41,7 +41,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	})
 
 	tx = tx.Where(
-		"(visibility != ? OR (visibility != ? AND author_id IN ? AND author_id NOT IN ?) OR (visibility = ? AND ?) OR (visibility = ? AND NOT ?) OR author_id = ?)",
+		"(visibility != ? OR (visibility != ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR (visibility = ? AND ?) OR (visibility = ? AND NOT ?) OR publisher_id = ?)",
 		NoneVisibility,
 		FriendsVisibility,
 		allowlist,
@@ -91,7 +91,7 @@ func FilterPostWithPublishedAt(tx *gorm.DB, date time.Time) *gorm.DB {
 }
 
 func FilterPostWithAuthorDraft(tx *gorm.DB, uid uint) *gorm.DB {
-	return tx.Where("author_id = ? AND is_draft = ?", uid, true)
+	return tx.Where("publisher_id = ? AND is_draft = ?", uid, true)
 }
 
 func FilterPostDraft(tx *gorm.DB) *gorm.DB {

@@ -4,6 +4,8 @@ git.solsynth.dev/hypernet/nexus v0.0.0-20241031133156-6bb8eab3fcd8 h1:fo9WuAXcmx
 git.solsynth.dev/hypernet/nexus v0.0.0-20241031133156-6bb8eab3fcd8/go.mod h1:fXQsHXGio+7/0U95IitKF07wS4yTdCMp5ms8wpFBwVI=
 git.solsynth.dev/hypernet/passport v0.0.0-20241031144010-d1f1183beb36 h1:rzDuXRTCbWJOgfT7bG0cWFcYqbWKnI1aEfiovpXfsdM=
 git.solsynth.dev/hypernet/passport v0.0.0-20241031144010-d1f1183beb36/go.mod h1:EjUDX5HdTo3J1GfAN5mfDf0JxRspzASj8uysa4V/ow0=
+git.solsynth.dev/hypernet/passport v0.0.0-20241102044832-40a040352174 h1:XplLpEeQOFlZR2/A4YIeh0B/g9//pXg/TXtWrvHDops=
+git.solsynth.dev/hypernet/passport v0.0.0-20241102044832-40a040352174/go.mod h1:EjUDX5HdTo3J1GfAN5mfDf0JxRspzASj8uysa4V/ow0=
 git.solsynth.dev/hypernet/pusher v0.0.0-20241026153052-cd2c326efa4e h1:DtHhMjgxS/spUt/KEdbRFtaVnepI6Vx8pbHdJaNH1hs=
 git.solsynth.dev/hypernet/pusher v0.0.0-20241026153052-cd2c326efa4e/go.mod h1:XHTqFU/vBe4JiuAjl87GUcL8+w/IizSNoqH6n3WkQFc=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=

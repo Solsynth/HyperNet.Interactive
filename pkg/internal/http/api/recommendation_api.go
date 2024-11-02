@@ -74,7 +74,7 @@ func listRecommendationFriends(c *fiber.Ctx) error {
 		return uint(item.GetId())
 	})
 
-	tx = tx.Where("author_id IN ?", friendList)
+	tx = tx.Where("publisher_id IN ?", friendList)
 
 	countTx := tx
 	count, err := services.CountPost(countTx)

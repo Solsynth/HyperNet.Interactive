@@ -25,7 +25,7 @@ func listPinnedPost(c *fiber.Ctx) error {
 	}
 
 	tx := services.FilterPostDraft(database.C)
-	tx = tx.Where("author_id = ?", user.ID)
+	tx = tx.Where("publisher_id = ?", user.ID)
 	tx = tx.Where("pinned_at IS NOT NULL")
 
 	items, err := services.ListPost(tx, 100, 0, "published_at DESC")

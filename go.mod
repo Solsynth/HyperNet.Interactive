@@ -4,7 +4,7 @@ go 1.23.2
 
 require (
 	git.solsynth.dev/hypernet/nexus v0.0.0-20241031133156-6bb8eab3fcd8
-	git.solsynth.dev/hypernet/passport v0.0.0-20241031144010-d1f1183beb36
+	git.solsynth.dev/hypernet/passport v0.0.0-20241102044832-40a040352174
 	git.solsynth.dev/hypernet/pusher v0.0.0-20241026153052-cd2c326efa4e
 	github.com/fatih/color v1.17.0
 	github.com/go-playground/validator/v10 v10.22.1

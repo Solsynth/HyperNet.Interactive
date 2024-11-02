@@ -24,7 +24,7 @@ func GetConversation(start uint, offset, take int, order string, participants []
 
             SELECT p.*
             FROM %s p
-            INNER JOIN conversation c ON p.reply_id = c.id AND p.author_id IN (?)
+            INNER JOIN conversation c ON p.reply_id = c.id AND p.publisher_id IN (?)
         )
         SELECT * FROM conversation ORDER BY %s DESC OFFSET %d LIMIT %d`,
 		table, table, order, offset, take,

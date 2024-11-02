@@ -37,7 +37,7 @@ func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
 			return tx, fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
-		tx = tx.Where("author_id = ?", author.ID)
+		tx = tx.Where("publisher_id = ?", author.ID)
 	}
 
 	if len(c.Query("category")) > 0 {
@@ -330,7 +330,7 @@ func pinPost(c *fiber.Ctx) error {
 	user := c.Locals("user").(authm.Account)
 
 	var res models.Post
-	if err := database.C.Where("id = ? AND author_id = ?", c.Params("postId"), user.ID).First(&res).Error; err != nil {
+	if err := database.C.Where("id = ? AND publisher_id = ?", c.Params("postId"), user.ID).First(&res).Error; err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("unable to find post in your posts to pin: %v", err))
 	}
 

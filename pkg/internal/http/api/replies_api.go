@@ -25,7 +25,7 @@ func listPostReplies(c *fiber.Ctx) error {
 		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
-		tx = tx.Where("author_id = ?", author.ID)
+		tx = tx.Where("publisher_id = ?", author.ID)
 	}
 
 	if len(c.Query("category")) > 0 {
@@ -68,7 +68,7 @@ func listPostFeaturedReply(c *fiber.Ctx) error {
 		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
 			return fiber.NewError(fiber.StatusNotFound, err.Error())
 		}
-		tx = tx.Where("author_id = ?", author.ID)
+		tx = tx.Where("publisher_id = ?", author.ID)
 	}
 
 	if len(c.Query("category")) > 0 {
