@@ -58,7 +58,7 @@ func listOwnedPublisher(c *fiber.Ctx) error {
 }
 
 func createPersonalPublisher(c *fiber.Ctx) error {
-	if err := sec.EnsureGrantedPerm(c, "CreatePublisher", true); err != nil {
+	if err := sec.EnsureGrantedPerm(c, "CreatePublishers", true); err != nil {
 		return err
 	}
 	user := c.Locals("user").(authm.Account)
@@ -71,7 +71,7 @@ func createPersonalPublisher(c *fiber.Ctx) error {
 }
 
 func createOrganizationPublisher(c *fiber.Ctx) error {
-	if err := sec.EnsureGrantedPerm(c, "CreatePublisher", true); err != nil {
+	if err := sec.EnsureGrantedPerm(c, "CreatePublishers", true); err != nil {
 		return err
 	}
 	user := c.Locals("user").(authm.Account)
