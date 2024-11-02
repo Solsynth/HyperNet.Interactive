@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+
 	"git.solsynth.dev/hydrogen/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"github.com/rs/zerolog/log"
@@ -15,7 +16,7 @@ import (
 var C *gorm.DB
 
 func NewGorm() error {
-	dsn, err := cruda.NewCrudaConn(gap.Nx).AllocDatabase("passport")
+	dsn, err := cruda.NewCrudaConn(gap.Nx).AllocDatabase("interactive")
 	if err != nil {
 		return fmt.Errorf("failed to alloc database from nexus: %v", err)
 	}
