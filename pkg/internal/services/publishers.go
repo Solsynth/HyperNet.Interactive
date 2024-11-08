@@ -15,6 +15,14 @@ func GetPublisher(id uint, userID uint) (models.Publisher, error) {
 	return publisher, nil
 }
 
+func GetPublisherByName(name string, userID uint) (models.Publisher, error) {
+	var publisher models.Publisher
+	if err := database.C.Where("name = ? AND account_id = ?", name, userID).First(&publisher).Error; err != nil {
+		return publisher, fmt.Errorf("unable to get publisher: %v", err)
+	}
+	return publisher, nil
+}
+
 func CreatePersonalPublisher(user authm.Account) (models.Publisher, error) {
 	var publisher models.Publisher
 	var count int64

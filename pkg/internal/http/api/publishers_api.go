@@ -109,8 +109,8 @@ func editPublisher(c *fiber.Ctx) error {
 	}
 	user := c.Locals("user").(authm.Account)
 
-	id, _ := c.ParamsInt("publisherId", 0)
-	publisher, err := services.GetPublisher(uint(id), user.ID)
+	name := c.Params("name")
+	publisher, err := services.GetPublisherByName(name, user.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
@@ -150,8 +150,8 @@ func deletePublisher(c *fiber.Ctx) error {
 	}
 	user := c.Locals("user").(authm.Account)
 
-	id, _ := c.ParamsInt("publisherId", 0)
-	publisher, err := services.GetPublisher(uint(id), user.ID)
+	name := c.Params("name")
+	publisher, err := services.GetPublisherByName(name, user.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}

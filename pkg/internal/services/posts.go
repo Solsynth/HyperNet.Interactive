@@ -110,14 +110,13 @@ func PreloadGeneral(tx *gorm.DB) *gorm.DB {
 	return tx.
 		Preload("Tags").
 		Preload("Categories").
-		Preload("Realm").
-		Preload("Author").
+		Preload("Publisher").
 		Preload("ReplyTo").
-		Preload("ReplyTo.Author").
+		Preload("ReplyTo.Publisher").
 		Preload("ReplyTo.Tags").
 		Preload("ReplyTo.Categories").
 		Preload("RepostTo").
-		Preload("RepostTo.Author").
+		Preload("RepostTo.Publisher").
 		Preload("RepostTo.Tags").
 		Preload("RepostTo.Categories")
 }
@@ -327,7 +326,7 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 		var op models.Post
 		if err := database.C.
 			Where("id = ?", item.ReplyID).
-			Preload("Author").
+			Preload("Publisher").
 			First(&op).Error; err == nil {
 			if op.Publisher.AccountID != nil && op.Publisher.ID != user.ID {
 				log.Debug().Uint("user", *op.Publisher.AccountID).Msg("Notifying the original poster their post got replied...")
@@ -406,7 +405,7 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 	var op models.Post
 	if err := database.C.
 		Where("id = ?", reaction.PostID).
-		Preload("Author").
+		Preload("Publisher").
 		First(&op).Error; err != nil {
 		return true, reaction, err
 	}

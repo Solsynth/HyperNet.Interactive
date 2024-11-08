@@ -14,8 +14,8 @@ func MapAPIs(app *fiber.App, baseURL string) {
 			publishers.Post("/organization", createOrganizationPublisher)
 			publishers.Get("/:name/pins", listPinnedPost)
 			publishers.Get("/:name", getPublisher)
-			publishers.Put("/:publisherId", editPublisher)
-			publishers.Delete("/:publisherId", deletePublisher)
+			publishers.Put("/:name", editPublisher)
+			publishers.Delete("/:name", deletePublisher)
 		}
 
 		recommendations := api.Group("/recommendations").Name("Recommendations API")
