@@ -481,6 +481,7 @@ func TruncatePostContent(post models.Post) models.Post {
 				post.Body["content"] = string([]rune(val)[:length]) + "..."
 				post.Body["content_truncated"] = true
 			}
+			post.Body["content_length"] = len([]rune(val))
 		}
 	}
 
