@@ -68,6 +68,10 @@ func FilterPostWithTag(tx *gorm.DB, alias string) *gorm.DB {
 		Where("tags.alias = ?", alias)
 }
 
+func FilterPostWithType(tx *gorm.DB, t string) *gorm.DB {
+	return tx.Where("type = ?", t)
+}
+
 func FilterPostWithRealm(tx *gorm.DB, id uint) *gorm.DB {
 	if id > 0 {
 		return tx.Where("realm_id = ?", id)
