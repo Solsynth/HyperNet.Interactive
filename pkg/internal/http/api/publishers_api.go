@@ -67,7 +67,26 @@ func createPersonalPublisher(c *fiber.Ctx) error {
 	}
 	user := c.Locals("user").(authm.Account)
 
-	if pub, err := services.CreatePersonalPublisher(user); err != nil {
+	var data struct {
+		Name        string `json:"name" validate:"required,min=4,max=32,alphanum"`
+		Nick        string `json:"nick" validate:"required,min=2,max=64"`
+		Description string `json:"description"`
+		Avatar      string `json:"avatar"`
+		Banner      string `json:"banner"`
+	}
+
+	if err := exts.BindAndValidate(c, &data); err != nil {
+		return err
+	}
+
+	if pub, err := services.CreatePersonalPublisher(
+		user,
+		data.Name,
+		data.Nick,
+		data.Description,
+		data.Avatar,
+		data.Banner,
+	); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
 		return c.JSON(pub)
@@ -81,7 +100,12 @@ func createOrganizationPublisher(c *fiber.Ctx) error {
 	user := c.Locals("user").(authm.Account)
 
 	var data struct {
-		Realm string `json:"realm"`
+		Realm       string `json:"realm" validate:"required"`
+		Name        string `json:"name" validate:"required,min=4,max=32,alphanum"`
+		Nick        string `json:"nick" validate:"required,min=2,max=64"`
+		Description string `json:"description"`
+		Avatar      string `json:"avatar"`
+		Banner      string `json:"banner"`
 	}
 
 	if err := exts.BindAndValidate(c, &data); err != nil {
@@ -96,7 +120,15 @@ func createOrganizationPublisher(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusForbidden, "you least need to be the admin of this realm to create a publisher")
 	}
 
-	if pub, err := services.CreateOrganizationPublisher(user, realm); err != nil {
+	if pub, err := services.CreateOrganizationPublisher(
+		user,
+		realm,
+		data.Name,
+		data.Nick,
+		data.Description,
+		data.Avatar,
+		data.Banner,
+	); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
 		return c.JSON(pub)

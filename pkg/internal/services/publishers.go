@@ -23,30 +23,20 @@ func GetPublisherByName(name string, userID uint) (models.Publisher, error) {
 	return publisher, nil
 }
 
-func CreatePersonalPublisher(user authm.Account) (models.Publisher, error) {
-	var publisher models.Publisher
-	var count int64
-	if err := database.C.
-		Model(&models.Publisher{}).
-		Where("account_id = ? AND type = ?", user.ID, models.PublisherTypePersonal).
-		Count(&count).Error; err != nil {
-		return publisher, fmt.Errorf("unable to count exsisting publisher: %v", err)
-	}
-	if count > 0 {
-		return publisher, fmt.Errorf("personal publisher already exists")
-	}
-
-	publisher = models.Publisher{
+func CreatePersonalPublisher(user authm.Account, name, nick, desc, avatar, banner string) (models.Publisher, error) {
+	publisher := models.Publisher{
 		Type:        models.PublisherTypePersonal,
-		Name:        user.Name,
-		Nick:        user.Nick,
-		Description: user.Description,
+		Name:        name,
+		Nick:        nick,
+		Description: desc,
+		Avatar:      avatar,
+		Banner:      banner,
 		AccountID:   &user.ID,
 	}
-	if user.Avatar != nil {
+	if user.Avatar != nil && len(publisher.Avatar) == 0 {
 		publisher.Avatar = *user.Avatar
 	}
-	if user.Banner != nil {
+	if user.Banner != nil && len(publisher.Banner) == 0 {
 		publisher.Banner = *user.Banner
 	}
 
@@ -56,31 +46,21 @@ func CreatePersonalPublisher(user authm.Account) (models.Publisher, error) {
 	return publisher, nil
 }
 
-func CreateOrganizationPublisher(user authm.Account, realm authm.Realm) (models.Publisher, error) {
-	var publisher models.Publisher
-	var count int64
-	if err := database.C.
-		Model(&models.Publisher{}).
-		Where("realm_id = ? AND type = ?", realm.ID, models.PublisherTypeOrganization).
-		Count(&count).Error; err != nil {
-		return publisher, fmt.Errorf("unable to count exsisting publisher: %v", err)
-	}
-	if count > 0 {
-		return publisher, fmt.Errorf("organization publisher already exists")
-	}
-
-	publisher = models.Publisher{
+func CreateOrganizationPublisher(user authm.Account, realm authm.Realm, name, nick, desc, avatar, banner string) (models.Publisher, error) {
+	publisher := models.Publisher{
 		Type:        models.PublisherTypeOrganization,
-		Name:        realm.Alias,
-		Nick:        realm.Name,
-		Description: realm.Description,
+		Name:        name,
+		Nick:        nick,
+		Description: desc,
+		Avatar:      avatar,
+		Banner:      banner,
 		RealmID:     &realm.ID,
 		AccountID:   &user.ID,
 	}
-	if realm.Avatar != nil {
+	if realm.Avatar != nil && len(publisher.Avatar) == 0 {
 		publisher.Avatar = *realm.Avatar
 	}
-	if realm.Banner != nil {
+	if realm.Banner != nil && len(publisher.Banner) == 0 {
 		publisher.Banner = *realm.Banner
 	}
 
