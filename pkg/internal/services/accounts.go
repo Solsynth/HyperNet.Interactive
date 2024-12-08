@@ -28,7 +28,7 @@ func ModifyPosterVoteCount(user models.Publisher, isUpvote bool, delta int) erro
 	return database.C.Save(&user).Error
 }
 
-func NotifyPosterAccount(pub models.Publisher, post models.Post, title, body string, subtitle ...string) error {
+func NotifyPosterAccount(pub models.Publisher, post models.Post, title, body, topic string, subtitle ...string) error {
 	if pub.AccountID == nil {
 		return nil
 	}
@@ -38,13 +38,14 @@ func NotifyPosterAccount(pub models.Publisher, post models.Post, title, body str
 	}
 
 	err := authkit.NotifyUser(gap.Nx, uint64(*pub.AccountID), pushkit.Notification{
-		Topic:    "interactive.feedback",
+		Topic:    topic,
 		Title:    title,
 		Subtitle: subtitle[0],
 		Body:     body,
 		Priority: 4,
 		Metadata: map[string]any{
 			"related_post": TruncatePostContent(post),
+			"avatar":       pub.Avatar,
 		},
 	})
 	if err != nil {

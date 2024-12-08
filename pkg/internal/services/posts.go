@@ -348,6 +348,7 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 					op,
 					"Post got replied",
 					fmt.Sprintf("%s (%s) replied your post (#%d).", user.Nick, user.Name, op.ID),
+					"interactive.reply",
 					fmt.Sprintf("%s replied you", user.Nick),
 				)
 				if err != nil {
@@ -431,6 +432,7 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 					op,
 					"Post got reacted",
 					fmt.Sprintf("%s (%s) reacted your post a %s.", user.Nick, user.Name, reaction.Symbol),
+					"interactive.feedback",
 					fmt.Sprintf("%s reacted you", user.Nick),
 				)
 				if err != nil {
