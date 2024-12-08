@@ -29,9 +29,9 @@ func createStory(c *fiber.Ctx) error {
 		Publisher      uint              `json:"publisher"`
 		Alias          *string           `json:"alias"`
 		Title          *string           `json:"title"`
-		Content        string            `json:"content" validate:"required,max=4096"`
+		Content        string            `json:"content" validate:"max=4096"`
 		Location       *string           `json:"location"`
-		Thumbnail      string            `json:"thumbnail"`
+		Thumbnail      *string           `json:"thumbnail"`
 		Attachments    []string          `json:"attachments"`
 		Tags           []models.Tag      `json:"tags"`
 		Categories     []models.Category `json:"categories"`
@@ -47,6 +47,8 @@ func createStory(c *fiber.Ctx) error {
 
 	if err := exts.BindAndValidate(c, &data); err != nil {
 		return err
+	} else if len(data.Content) == 0 && len(data.Attachments) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "content or attachments are required")
 	}
 
 	publisher, err := services.GetPublisher(data.Publisher, user.ID)
@@ -134,8 +136,8 @@ func editStory(c *fiber.Ctx) error {
 		Publisher      uint              `json:"publisher"`
 		Alias          *string           `json:"alias"`
 		Title          *string           `json:"title"`
-		Content        string            `json:"content" validate:"required,max=4096"`
-		Thumbnail      string            `json:"thumbnail"`
+		Content        string            `json:"content" validate:"max=4096"`
+		Thumbnail      *string           `json:"thumbnail"`
 		Location       *string           `json:"location"`
 		Attachments    []string          `json:"attachments"`
 		Tags           []models.Tag      `json:"tags"`
@@ -150,6 +152,8 @@ func editStory(c *fiber.Ctx) error {
 
 	if err := exts.BindAndValidate(c, &data); err != nil {
 		return err
+	} else if len(data.Content) == 0 && len(data.Attachments) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "content or attachments are required")
 	}
 
 	publisher, err := services.GetPublisher(data.Publisher, user.ID)

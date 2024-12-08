@@ -30,7 +30,7 @@ func createArticle(c *fiber.Ctx) error {
 		Title          string            `json:"title" validate:"required,max=1024"`
 		Description    *string           `json:"description"`
 		Content        string            `json:"content" validate:"required"`
-		Thumbnail      string            `json:"thumbnail"`
+		Thumbnail      *string           `json:"thumbnail"`
 		Attachments    []string          `json:"attachments"`
 		Tags           []models.Tag      `json:"tags"`
 		Categories     []models.Category `json:"categories"`
@@ -116,7 +116,7 @@ func editArticle(c *fiber.Ctx) error {
 		Title          string            `json:"title" validate:"required,max=1024"`
 		Description    *string           `json:"description"`
 		Content        string            `json:"content" validate:"required"`
-		Thumbnail      string            `json:"thumbnail"`
+		Thumbnail      *string           `json:"thumbnail"`
 		Attachments    []string          `json:"attachments"`
 		Tags           []models.Tag      `json:"tags"`
 		Categories     []models.Category `json:"categories"`
