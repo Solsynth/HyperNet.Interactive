@@ -40,11 +40,11 @@ func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 		tx = tx.Where("publisher_id = ?", author.ID)
 	}
 
-	if len(c.Query("category")) > 0 {
-		tx = services.FilterPostWithCategory(tx, c.Query("category"))
+	if len(c.Query("categories")) > 0 {
+		tx = services.FilterPostWithCategory(tx, c.Query("categories"))
 	}
-	if len(c.Query("tag")) > 0 {
-		tx = services.FilterPostWithTag(tx, c.Query("tag"))
+	if len(c.Query("tags")) > 0 {
+		tx = services.FilterPostWithTag(tx, c.Query("tags"))
 	}
 
 	if len(c.Query("type")) > 0 {
@@ -103,8 +103,8 @@ func searchPost(c *fiber.Ctx) error {
 	tx := database.C
 
 	probe := c.Query("probe")
-	if len(probe) == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "probe is required")
+	if len(probe) == 0 && len(c.Query("tags")) == 0 && len(c.Query("categories")) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "search term (probe, tags or categories) is required")
 	}
 
 	tx = services.FilterPostWithFuzzySearch(tx, probe)

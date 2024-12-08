@@ -9,6 +9,7 @@ import (
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -59,13 +60,17 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 func FilterPostWithCategory(tx *gorm.DB, alias string) *gorm.DB {
 	return tx.Joins("JOIN post_categories ON posts.id = post_categories.post_id").
 		Joins("JOIN categories ON categories.id = post_categories.category_id").
-		Where("categories.alias = ?", alias)
+		Where("categories.alias IN ?", strings.Split(alias, ",")).
+		Distinct("posts.id")
 }
 
 func FilterPostWithTag(tx *gorm.DB, alias string) *gorm.DB {
+	aliases := strings.Split(alias, ",")
 	return tx.Joins("JOIN post_tags ON posts.id = post_tags.post_id").
 		Joins("JOIN tags ON tags.id = post_tags.tag_id").
-		Where("tags.alias = ?", alias)
+		Where("tags.alias IN ?", aliases).
+		Group("posts.id").
+		Having("COUNT(DISTINCT tags.id) = ?", len(aliases))
 }
 
 func FilterPostWithType(tx *gorm.DB, t string) *gorm.DB {
@@ -103,6 +108,10 @@ func FilterPostDraft(tx *gorm.DB) *gorm.DB {
 }
 
 func FilterPostWithFuzzySearch(tx *gorm.DB, probe string) *gorm.DB {
+	if len(probe) == 0 {
+		return tx
+	}
+
 	probe = "%" + probe + "%"
 	return tx.
 		Where("? AND body->>'content' ILIKE ?", gorm.Expr("body ? 'content'"), probe).
