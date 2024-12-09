@@ -18,11 +18,11 @@ func GetFeaturedPosts(count int) ([]models.Post, error) {
 
 	var posts []models.Post
 	if err := database.C.Raw(`
-		SELECT p.*
+		SELECT p.*, t.social_points
         FROM posts p
         JOIN (
-            SELECT
-                post_id,
+            SELECT 
+                post_id, 
                 SUM(CASE WHEN attitude = 1 THEN 1 ELSE 0 END) -
                 SUM(CASE WHEN attitude = 2 THEN 1 ELSE 0 END) AS social_points
             FROM reactions
@@ -32,7 +32,7 @@ func GetFeaturedPosts(count int) ([]models.Post, error) {
             LIMIT ?
         ) t ON p.id = t.post_id
         ORDER BY t.social_points DESC, p.published_at DESC
-    `, deadline, count).Scan(&posts).Error; err != nil {
+	`, deadline, count).Scan(&posts).Error; err != nil {
 		return posts, err
 	}
 
