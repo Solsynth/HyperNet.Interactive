@@ -1,12 +1,17 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	localCache "git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/proto"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
+	"github.com/eko/gocache/lib/v4/cache"
+	"github.com/eko/gocache/lib/v4/marshaler"
+	"github.com/eko/gocache/lib/v4/store"
 	"regexp"
 	"strconv"
 	"strings"
@@ -32,35 +37,69 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		NoneVisibility     = models.PostVisibilityNone
 	)
 
-	userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
-	userBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
-	userFriendList := lo.Map(userFriends, func(item *proto.UserInfo, index int) uint {
-		return uint(item.GetId())
-	})
-	userBlockList := lo.Map(userBlocked, func(item *proto.UserInfo, index int) uint {
-		return uint(item.GetId())
-	})
+	type userContextState struct {
+		Allowlist []uint
+		Blocklist []uint
+	}
 
-	// Query the publishers according to the user's relationship
-	var publishers []models.Publisher
-	database.C.Where(
-		"id IN ? AND type = ?",
-		append(userFriendList, userBlockList...),
-		models.PublisherTypePersonal,
-	).Find(&publishers)
+	cacheManager := cache.New[any](localCache.S)
+	marshal := marshaler.New(cacheManager)
+	ctx := context.Background()
 
-	allowlist := lo.Filter(publishers, func(item models.Publisher, index int) bool {
-		if item.AccountID == nil {
-			return false
-		}
-		return lo.Contains(userFriendList, *item.AccountID)
-	})
-	blocklist := lo.Filter(publishers, func(item models.Publisher, index int) bool {
-		if item.AccountID == nil {
-			return false
-		}
-		return lo.Contains(userBlockList, *item.AccountID)
-	})
+	var allowlist, blocklist []uint
+
+	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
+	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
+	if err == nil {
+		state := statusCache.(*userContextState)
+		allowlist = state.Allowlist
+		blocklist = state.Blocklist
+	} else {
+		userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
+		userBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
+		userFriendList := lo.Map(userFriends, func(item *proto.UserInfo, index int) uint {
+			return uint(item.GetId())
+		})
+		userBlockList := lo.Map(userBlocked, func(item *proto.UserInfo, index int) uint {
+			return uint(item.GetId())
+		})
+
+		// Query the publishers according to the user's relationship
+		var publishers []models.Publisher
+		database.C.Where(
+			"id IN ? AND type = ?",
+			append(userFriendList, userBlockList...),
+			models.PublisherTypePersonal,
+		).Find(&publishers)
+
+		allowlist = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
+			if item.AccountID == nil {
+				return false
+			}
+			return lo.Contains(userFriendList, *item.AccountID)
+		}), func(item models.Publisher, index int) uint {
+			return uint(item.ID)
+		})
+		blocklist = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
+			if item.AccountID == nil {
+				return false
+			}
+			return lo.Contains(userBlockList, *item.AccountID)
+		}), func(item models.Publisher, index int) uint {
+			return uint(item.ID)
+		})
+
+		_ = marshal.Set(
+			ctx,
+			statusCacheKey,
+			userContextState{
+				Allowlist: allowlist,
+				Blocklist: blocklist,
+			},
+			store.WithExpiration(5*time.Minute),
+			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
+		)
+	}
 
 	tx = tx.Where(
 		"(visibility != ? OR (visibility = ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR (visibility = ? AND ?) OR (visibility = ? AND NOT ?) OR publisher_id = ?)",

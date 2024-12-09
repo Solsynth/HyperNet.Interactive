@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	pkg "git.solsynth.dev/hypernet/interactive/pkg/internal"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"github.com/fatih/color"
@@ -67,6 +68,11 @@ func main() {
 	quartz := cron.New(cron.WithLogger(cron.VerbosePrintfLogger(&log.Logger)))
 	quartz.AddFunc("@every 60m", services.DoAutoDatabaseCleanup)
 	quartz.Start()
+
+	// Initialize cache
+	if err := cache.NewStore(); err != nil {
+		log.Fatal().Err(err).Msg("An error occurred when initializing cache.")
+	}
 
 	// App
 	go http.NewServer().Listen()
