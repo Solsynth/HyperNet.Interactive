@@ -26,7 +26,7 @@ func listRecommendation(c *fiber.Ctx) error {
 	})
 
 	tx := database.C.Where("id IN ?", postIdx)
-	newPosts, err := services.ListPost(tx, featuredMax, 0, " DESC")
+	newPosts, err := services.ListPost(tx, featuredMax, 0, "id ASC")
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
