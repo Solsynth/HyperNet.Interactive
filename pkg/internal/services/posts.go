@@ -32,17 +32,38 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		NoneVisibility     = models.PostVisibilityNone
 	)
 
-	friends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
-	allowlist := lo.Map(friends, func(item *proto.UserInfo, index int) uint {
+	userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
+	userBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
+	userFriendList := lo.Map(userFriends, func(item *proto.UserInfo, index int) uint {
 		return uint(item.GetId())
 	})
-	blocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
-	blocklist := lo.Map(blocked, func(item *proto.UserInfo, index int) uint {
+	userBlockList := lo.Map(userBlocked, func(item *proto.UserInfo, index int) uint {
 		return uint(item.GetId())
 	})
 
+	// Query the publishers according to the user's relationship
+	var publishers []models.Publisher
+	database.C.Where(
+		"id IN ? AND type = ?",
+		append(userFriendList, userBlockList...),
+		models.PublisherTypePersonal,
+	).Find(&publishers)
+
+	allowlist := lo.Filter(publishers, func(item models.Publisher, index int) bool {
+		if item.AccountID == nil {
+			return false
+		}
+		return lo.Contains(userFriendList, *item.AccountID)
+	})
+	blocklist := lo.Filter(publishers, func(item models.Publisher, index int) bool {
+		if item.AccountID == nil {
+			return false
+		}
+		return lo.Contains(userBlockList, *item.AccountID)
+	})
+
 	tx = tx.Where(
-		"(visibility != ? OR (visibility != ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR (visibility = ? AND ?) OR (visibility = ? AND NOT ?) OR publisher_id = ?)",
+		"(visibility != ? OR (visibility = ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR (visibility = ? AND ?) OR (visibility = ? AND NOT ?) OR publisher_id = ?)",
 		NoneVisibility,
 		FriendsVisibility,
 		allowlist,
