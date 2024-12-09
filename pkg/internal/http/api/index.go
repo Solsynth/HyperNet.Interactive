@@ -20,7 +20,7 @@ func MapAPIs(app *fiber.App, baseURL string) {
 
 		recommendations := api.Group("/recommendations").Name("Recommendations API")
 		{
-			recommendations.Get("/", listRecommendationNews)
+			recommendations.Get("/", listRecommendation)
 			recommendations.Get("/friends", listRecommendationFriends)
 			recommendations.Get("/shuffle", listRecommendationShuffle)
 		}
