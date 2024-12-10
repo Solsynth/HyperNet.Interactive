@@ -358,6 +358,9 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 	if item.Alias != nil && len(*item.Alias) == 0 {
 		item.Alias = nil
 	}
+	if item.PublishedAt != nil && item.PublishedAt.Unix() < time.Now().Unix() {
+		return item, fmt.Errorf("post cannot be published before now")
+	}
 
 	if item.Alias != nil {
 		re := regexp.MustCompile(`^[a-z0-9.-]+$`)
@@ -438,6 +441,9 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 func EditPost(item models.Post) (models.Post, error) {
 	if item.Alias != nil && len(*item.Alias) == 0 {
 		item.Alias = nil
+	}
+	if item.PublishedAt != nil && item.PublishedAt.Unix() < item.CreatedAt.Unix() {
+		return item, fmt.Errorf("post cannot be published before it is created")
 	}
 
 	if item.Alias != nil {
