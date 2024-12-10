@@ -31,8 +31,9 @@ func GetFeaturedPosts(count int) ([]models.Post, error) {
             ORDER BY social_points DESC
             LIMIT ?
         ) t ON p.id = t.post_id
+		WHERE p.visibility = ?
         ORDER BY t.social_points DESC, p.published_at DESC
-	`, deadline, count).Scan(&posts).Error; err != nil {
+	`, deadline, count, models.PostVisibilityAll).Scan(&posts).Error; err != nil {
 		return posts, err
 	}
 
