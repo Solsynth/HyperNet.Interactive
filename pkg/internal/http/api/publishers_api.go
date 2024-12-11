@@ -66,7 +66,7 @@ func listRelatedPublisher(c *fiber.Ctx) error {
 	}
 
 	var publishers []models.Publisher
-	if err := database.C.Find(&publishers).Error; err != nil {
+	if err := tx.Find(&publishers).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 
