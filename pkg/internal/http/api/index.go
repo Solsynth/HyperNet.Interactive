@@ -9,7 +9,8 @@ func MapAPIs(app *fiber.App, baseURL string) {
 	{
 		publishers := api.Group("/publishers").Name("Publisher API")
 		{
-			publishers.Get("/", listOwnedPublisher)
+			publishers.Get("/", listRelatedPublisher)
+			publishers.Get("/me", listOwnedPublisher)
 			publishers.Post("/personal", createPersonalPublisher)
 			publishers.Post("/organization", createOrganizationPublisher)
 			publishers.Get("/:name/pins", listPinnedPost)

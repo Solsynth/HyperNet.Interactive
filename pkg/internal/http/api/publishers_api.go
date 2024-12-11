@@ -47,6 +47,32 @@ func getPublisher(c *fiber.Ctx) error {
 	return c.JSON(publisher)
 }
 
+func listRelatedPublisher(c *fiber.Ctx) error {
+	tx := database.C
+	if len(c.Query("user")) > 0 {
+		user, err := authkit.GetUserByName(gap.Nx, c.Query("user"))
+		if err != nil {
+			return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("unable to find user: %v", err))
+		}
+		tx = tx.Where("account_id = ? AND type = ?", user.ID, models.PublisherTypePersonal)
+	} else if len(c.Query("realm")) > 0 {
+		realm, err := authkit.GetRealmByAlias(gap.Nx, c.Query("realm"))
+		if err != nil {
+			return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("unable to find realm: %v", err))
+		}
+		tx = tx.Where("realm_id = ? AND type = ?", realm.ID, models.PublisherTypeOrganization)
+	} else {
+		return fiber.NewError(fiber.StatusBadRequest, "missing user or realm in query string")
+	}
+
+	var publishers []models.Publisher
+	if err := database.C.Find(&publishers).Error; err != nil {
+		return fiber.NewError(fiber.StatusNotFound, err.Error())
+	}
+
+	return c.JSON(publishers)
+}
+
 func listOwnedPublisher(c *fiber.Ctx) error {
 	if err := sec.EnsureAuthenticated(c); err != nil {
 		return err
