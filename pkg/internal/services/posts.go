@@ -12,6 +12,7 @@ import (
 	"github.com/eko/gocache/lib/v4/cache"
 	"github.com/eko/gocache/lib/v4/marshaler"
 	"github.com/eko/gocache/lib/v4/store"
+	"gorm.io/datatypes"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,7 +22,6 @@ import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -38,15 +38,16 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	)
 
 	type userContextState struct {
-		Allowlist []uint
-		Blocklist []uint
+		Allowlist     []uint
+		Blocklist     []uint
+		InvisibleList []uint
 	}
 
 	cacheManager := cache.New[any](localCache.S)
 	marshal := marshaler.New(cacheManager)
 	ctx := context.Background()
 
-	var allowlist, blocklist []uint
+	var allowlist, blocklist, invisibleList []uint
 
 	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
 	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
@@ -54,13 +55,18 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		state := statusCache.(*userContextState)
 		allowlist = state.Allowlist
 		blocklist = state.Blocklist
+		invisibleList = state.InvisibleList
 	} else {
 		userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
-		userBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
+		userGotBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
+		userBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), false)
 		userFriendList := lo.Map(userFriends, func(item *proto.UserInfo, index int) uint {
 			return uint(item.GetId())
 		})
-		userBlockList := lo.Map(userBlocked, func(item *proto.UserInfo, index int) uint {
+		userGotBlockList := lo.Map(userGotBlocked, func(item *proto.UserInfo, index int) uint {
+			return uint(item.GetId())
+		})
+		userBlocklist := lo.Map(userBlocked, func(item *proto.UserInfo, index int) uint {
 			return uint(item.GetId())
 		})
 
@@ -68,7 +74,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		var publishers []models.Publisher
 		database.C.Where(
 			"id IN ? AND type = ?",
-			append(userFriendList, userBlockList...),
+			lo.Uniq(append(append(userFriendList, userGotBlockList...), userBlocklist...)),
 			models.PublisherTypePersonal,
 		).Find(&publishers)
 
@@ -84,7 +90,15 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 			if item.AccountID == nil {
 				return false
 			}
-			return lo.Contains(userBlockList, *item.AccountID)
+			return lo.Contains(userGotBlockList, *item.AccountID)
+		}), func(item models.Publisher, index int) uint {
+			return uint(item.ID)
+		})
+		invisibleList = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
+			if item.AccountID == nil {
+				return false
+			}
+			return lo.Contains(userBlocklist, *item.AccountID)
 		}), func(item models.Publisher, index int) uint {
 			return uint(item.ID)
 		})
@@ -93,8 +107,9 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 			ctx,
 			statusCacheKey,
 			userContextState{
-				Allowlist: allowlist,
-				Blocklist: blocklist,
+				Allowlist:     allowlist,
+				Blocklist:     blocklist,
+				InvisibleList: invisibleList,
 			},
 			store.WithExpiration(5*time.Minute),
 			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
@@ -102,7 +117,11 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	}
 
 	tx = tx.Where(
-		"(visibility != ? OR (visibility = ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR (visibility = ? AND ?) OR (visibility = ? AND NOT ?) OR publisher_id = ?)",
+		"publisher_id = ? OR visibility != ? OR "+
+			"(visibility = ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR "+
+			"(visibility = ? AND ?) OR "+
+			"(visibility = ? AND NOT ?)",
+		user.ID,
 		NoneVisibility,
 		FriendsVisibility,
 		allowlist,
@@ -111,8 +130,9 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
 		FilteredVisibility,
 		datatypes.JSONQuery("invisible_users").HasKey(strconv.Itoa(int(user.ID))),
-		user.ID,
 	)
+
+	tx = tx.Where("publisher_id NOT IN ?", invisibleList)
 
 	return tx
 }
