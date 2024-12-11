@@ -132,7 +132,9 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		datatypes.JSONQuery("invisible_users").HasKey(strconv.Itoa(int(user.ID))),
 	)
 
-	tx = tx.Where("publisher_id NOT IN ?", invisibleList)
+	if len(invisibleList) > 0 {
+		tx = tx.Where("publisher_id NOT IN ?", invisibleList)
+	}
 
 	return tx
 }
