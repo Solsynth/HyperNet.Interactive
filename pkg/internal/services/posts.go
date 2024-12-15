@@ -451,6 +451,10 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 }
 
 func EditPost(item models.Post) (models.Post, error) {
+	if _, ok := item.Body["content_truncated"]; ok {
+		return item, fmt.Errorf("prevented from editing post with truncated content")
+	}
+
 	if item.Alias != nil && len(*item.Alias) == 0 {
 		item.Alias = nil
 	}
@@ -516,10 +520,11 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 
 				if reaction.Attitude == models.AttitudePositive {
 					op.TotalUpvote++
+					database.C.Where("id = ?", op.ID).Update("total_upvote", op.TotalDownvote)
 				} else {
 					op.TotalDownvote++
+					database.C.Where("id = ?", op.ID).Update("total_downvote", op.TotalDownvote)
 				}
-				database.C.Save(&op)
 			}
 
 			return true, reaction, err
@@ -533,8 +538,10 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 
 			if reaction.Attitude == models.AttitudePositive {
 				op.TotalUpvote--
+				database.C.Where("id = ?", op.ID).Update("total_upvote", op.TotalDownvote)
 			} else {
 				op.TotalDownvote--
+				database.C.Where("id = ?", op.ID).Update("total_downvote", op.TotalDownvote)
 			}
 			database.C.Save(&op)
 		}
@@ -550,7 +557,7 @@ func PinPost(post models.Post) (bool, error) {
 		post.PinnedAt = lo.ToPtr(time.Now())
 	}
 
-	if err := database.C.Save(&post).Error; err != nil {
+	if err := database.C.Where("id = ?", post.ID).Update("pinned_at", post.PinnedAt).Error; err != nil {
 		return post.PinnedAt != nil, err
 	}
 	return post.PinnedAt != nil, nil
