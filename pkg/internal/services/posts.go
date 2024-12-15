@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	localCache "git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/proto"
@@ -13,10 +18,6 @@ import (
 	"github.com/eko/gocache/lib/v4/marshaler"
 	"github.com/eko/gocache/lib/v4/store"
 	"gorm.io/datatypes"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
@@ -39,7 +40,6 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 
 	type userContextState struct {
 		Allowlist     []uint
-		Blocklist     []uint
 		InvisibleList []uint
 	}
 
@@ -47,14 +47,13 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	marshal := marshaler.New(cacheManager)
 	ctx := context.Background()
 
-	var allowlist, blocklist, invisibleList []uint
+	var allowlist, invisibleList []uint
 
 	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
 	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
 	if err == nil {
 		state := statusCache.(*userContextState)
 		allowlist = state.Allowlist
-		blocklist = state.Blocklist
 		invisibleList = state.InvisibleList
 	} else {
 		userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
@@ -86,14 +85,6 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		}), func(item models.Publisher, index int) uint {
 			return uint(item.ID)
 		})
-		blocklist = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
-			if item.AccountID == nil {
-				return false
-			}
-			return lo.Contains(userGotBlockList, *item.AccountID)
-		}), func(item models.Publisher, index int) uint {
-			return uint(item.ID)
-		})
 		invisibleList = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
 			if item.AccountID == nil {
 				return false
@@ -108,7 +99,6 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 			statusCacheKey,
 			userContextState{
 				Allowlist:     allowlist,
-				Blocklist:     blocklist,
 				InvisibleList: invisibleList,
 			},
 			store.WithExpiration(5*time.Minute),
@@ -118,14 +108,13 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 
 	tx = tx.Where(
 		"publisher_id = ? OR visibility != ? OR "+
-			"(visibility = ? AND publisher_id IN ? AND publisher_id NOT IN ?) OR "+
+			"(visibility = ? AND publisher_id IN ?) OR "+
 			"(visibility = ? AND ?) OR "+
 			"(visibility = ? AND NOT ?)",
 		user.ID,
 		NoneVisibility,
 		FriendsVisibility,
 		allowlist,
-		blocklist,
 		SelectedVisibility,
 		datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
 		FilteredVisibility,
