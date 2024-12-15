@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"

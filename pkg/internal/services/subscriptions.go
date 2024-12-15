@@ -3,12 +3,15 @@ package services
 import (
 	"errors"
 	"fmt"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/nexus/pkg/proto"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"git.solsynth.dev/hypernet/pusher/pkg/pushkit"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
 
@@ -135,7 +138,11 @@ func UnsubscribeFromCategory(user authm.Account, target models.Category) error {
 	return err
 }
 
-func NotifyUserSubscription(poster models.Publisher, content string, title *string) error {
+func NotifyUserSubscription(poster models.Publisher, item models.Post, content string, title *string) error {
+	if item.Visibility == models.PostVisibilityNone {
+		return nil
+	}
+
 	var subscriptions []models.Subscription
 	if err := database.C.Where("account_id = ?", poster.ID).Preload("Follower").Find(&subscriptions).Error; err != nil {
 		return fmt.Errorf("unable to get subscriptions: %v", err)
@@ -154,6 +161,20 @@ func NotifyUserSubscription(poster models.Publisher, content string, title *stri
 		userIDs = append(userIDs, uint64(subscription.Follower.ID))
 	}
 
+	if item.Visibility == models.PostVisibilitySelected {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return lo.Contains(item.VisibleUsers, uint(entry))
+		})
+	} else if item.Visibility == models.PostVisibilityFiltered {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return !lo.Contains(item.InvisibleUsers, uint(entry))
+		})
+	} else if invisibleList := ListPostInvisibleUser(poster, item.Visibility); len(invisibleList) > 0 {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return !lo.Contains(invisibleList, uint(entry))
+		})
+	}
+
 	err := authkit.NotifyUserBatch(gap.Nx, userIDs, pushkit.Notification{
 		Topic:    "interactive.subscription",
 		Title:    nTitle,
@@ -165,7 +186,11 @@ func NotifyUserSubscription(poster models.Publisher, content string, title *stri
 	return err
 }
 
-func NotifyTagSubscription(poster models.Tag, og models.Publisher, content string, title *string) error {
+func NotifyTagSubscription(poster models.Tag, og models.Publisher, item models.Post, content string, title *string) error {
+	if item.Visibility == models.PostVisibilityNone {
+		return nil
+	}
+
 	var subscriptions []models.Subscription
 	if err := database.C.Where("tag_id = ?", poster.ID).Preload("Follower").Find(&subscriptions).Error; err != nil {
 		return fmt.Errorf("unable to get subscriptions: %v", err)
@@ -184,6 +209,20 @@ func NotifyTagSubscription(poster models.Tag, og models.Publisher, content strin
 		userIDs = append(userIDs, uint64(subscription.Follower.ID))
 	}
 
+	if item.Visibility == models.PostVisibilitySelected {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return lo.Contains(item.VisibleUsers, uint(entry))
+		})
+	} else if item.Visibility == models.PostVisibilityFiltered {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return !lo.Contains(item.InvisibleUsers, uint(entry))
+		})
+	} else if invisibleList := ListPostInvisibleUser(item.Publisher, item.Visibility); len(invisibleList) > 0 {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return !lo.Contains(invisibleList, uint(entry))
+		})
+	}
+
 	err := authkit.NotifyUserBatch(gap.Nx, userIDs, pushkit.Notification{
 		Topic:    "interactive.subscription",
 		Title:    nTitle,
@@ -195,7 +234,11 @@ func NotifyTagSubscription(poster models.Tag, og models.Publisher, content strin
 	return err
 }
 
-func NotifyCategorySubscription(poster models.Category, og models.Publisher, content string, title *string) error {
+func NotifyCategorySubscription(poster models.Category, og models.Publisher, item models.Post, content string, title *string) error {
+	if item.Visibility == models.PostVisibilityNone {
+		return nil
+	}
+
 	var subscriptions []models.Subscription
 	if err := database.C.Where("category_id = ?", poster.ID).Preload("Follower").Find(&subscriptions).Error; err != nil {
 		return fmt.Errorf("unable to get subscriptions: %v", err)
@@ -214,6 +257,20 @@ func NotifyCategorySubscription(poster models.Category, og models.Publisher, con
 		userIDs = append(userIDs, uint64(subscription.Follower.ID))
 	}
 
+	if item.Visibility == models.PostVisibilitySelected {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return lo.Contains(item.VisibleUsers, uint(entry))
+		})
+	} else if item.Visibility == models.PostVisibilityFiltered {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return !lo.Contains(item.InvisibleUsers, uint(entry))
+		})
+	} else if invisibleList := ListPostInvisibleUser(item.Publisher, item.Visibility); len(invisibleList) > 0 {
+		userIDs = lo.Filter(userIDs, func(entry uint64, index int) bool {
+			return !lo.Contains(invisibleList, uint(entry))
+		})
+	}
+
 	err := authkit.NotifyUserBatch(gap.Nx, userIDs, pushkit.Notification{
 		Topic:    "interactive.subscription",
 		Title:    nTitle,
@@ -223,4 +280,24 @@ func NotifyCategorySubscription(poster models.Category, og models.Publisher, con
 	})
 
 	return err
+}
+
+// ListPostInvisibleUser will return a list of users which should not be notified the post.
+// NOTICE If the visibility is PostVisibilitySelected, PostVisibilityFiltered or PostVisibilityNone, you need do extra steps to filter users
+// WARNING This function won't use cache, be careful of the queries
+func ListPostInvisibleUser(og models.Publisher, visibility models.PostVisibilityLevel) []uint {
+	switch visibility {
+	case models.PostVisibilityAll:
+		return []uint{}
+	case models.PostVisibilityFriends:
+		if og.AccountID == nil {
+			return []uint{}
+		}
+		userFriends, _ := authkit.ListRelative(gap.Nx, *og.AccountID, int32(authm.RelationshipFriend), true)
+		return lo.Map(userFriends, func(item *proto.UserInfo, index int) uint {
+			return uint(item.GetId())
+		})
+	default:
+		return nil
+	}
 }

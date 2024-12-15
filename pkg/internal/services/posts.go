@@ -429,16 +429,17 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 		var title *string
 		title, _ = item.Body["title"].(*string)
 		go func() {
-			if err := NotifyUserSubscription(user, content, title); err != nil {
+			item.Publisher = user
+			if err := NotifyUserSubscription(user, item, content, title); err != nil {
 				log.Error().Err(err).Msg("An error occurred when notifying subscriptions user by user...")
 			}
 			for _, tag := range item.Tags {
-				if err := NotifyTagSubscription(tag, user, content, title); err != nil {
+				if err := NotifyTagSubscription(tag, user, item, content, title); err != nil {
 					log.Error().Err(err).Msg("An error occurred when notifying subscriptions user by tag...")
 				}
 			}
 			for _, category := range item.Categories {
-				if err := NotifyCategorySubscription(category, user, content, title); err != nil {
+				if err := NotifyCategorySubscription(category, user, item, content, title); err != nil {
 					log.Error().Err(err).Msg("An error occurred when notifying subscriptions user by category...")
 				}
 			}
