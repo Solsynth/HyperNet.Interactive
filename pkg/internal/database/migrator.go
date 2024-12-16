@@ -10,13 +10,15 @@ var AutoMaintainRange = []any{
 	&models.Category{},
 	&models.Tag{},
 	&models.Post{},
-	&models.Reaction{},
 	&models.Subscription{},
 }
 
 func RunMigration(source *gorm.DB) error {
 	if err := source.AutoMigrate(
-		AutoMaintainRange...,
+		append(
+			AutoMaintainRange,
+			&models.Reaction{},
+		)...,
 	); err != nil {
 		return err
 	}

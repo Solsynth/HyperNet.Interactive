@@ -22,11 +22,11 @@ func GetAccountWithID(id uint) (models.Publisher, error) {
 func ModifyPosterVoteCount(user models.Publisher, isUpvote bool, delta int) error {
 	if isUpvote {
 		user.TotalUpvote += delta
+		return database.C.Model(&user).Update("total_upvote", user.TotalUpvote).Error
 	} else {
 		user.TotalDownvote += delta
+		return database.C.Model(&user).Update("total_downvote", user.TotalDownvote).Error
 	}
-
-	return database.C.Save(&user).Error
 }
 
 func NotifyPosterAccount(pub models.Publisher, post models.Post, title, body, topic string, subtitle ...string) error {
