@@ -520,7 +520,7 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 
 				if reaction.Attitude == models.AttitudePositive {
 					op.TotalUpvote++
-					database.C.Model(&op).Update("total_upvote", op.TotalDownvote)
+					database.C.Model(&op).Update("total_upvote", op.TotalUpvote)
 				} else {
 					op.TotalDownvote++
 					database.C.Model(&op).Update("total_downvote", op.TotalDownvote)
@@ -538,7 +538,7 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 
 			if reaction.Attitude == models.AttitudePositive {
 				op.TotalUpvote--
-				database.C.Model(&op).Update("total_upvote", op.TotalDownvote)
+				database.C.Model(&op).Update("total_upvote", op.TotalUpvote)
 			} else {
 				op.TotalDownvote--
 				database.C.Model(&op).Update("total_downvote", op.TotalDownvote)
