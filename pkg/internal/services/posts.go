@@ -543,7 +543,6 @@ func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.React
 				op.TotalDownvote--
 				database.C.Model(&op).Update("total_downvote", op.TotalDownvote)
 			}
-			database.C.Save(&op)
 		}
 
 		return false, reaction, err
