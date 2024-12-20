@@ -220,7 +220,7 @@ func GetPostByAlias(tx *gorm.DB, alias, area string, ignoreLimitation ...bool) (
 	var item models.Post
 	if err := PreloadGeneral(tx).
 		Where("alias = ?", alias).
-		Where("area_alias = ?", area).
+		Where("alias_prefix = ?", area).
 		First(&item).Error; err != nil {
 		return item, err
 	}
