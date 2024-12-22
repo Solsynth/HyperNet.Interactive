@@ -202,7 +202,6 @@ func editStory(c *fiber.Ctx) error {
 	item.Tags = data.Tags
 	item.Categories = data.Categories
 	item.IsDraft = data.IsDraft
-	item.PublishedAt = data.PublishedAt
 	item.PublishedUntil = data.PublishedUntil
 	item.VisibleUsers = data.VisibleUsers
 	item.InvisibleUsers = data.InvisibleUsers
@@ -210,6 +209,9 @@ func editStory(c *fiber.Ctx) error {
 	// Preload publisher data
 	item.Publisher = publisher
 
+	if item.PublishedAt == nil {
+		item.PublishedAt = data.PublishedAt
+	}
 	if data.Visibility != nil {
 		item.Visibility = *data.Visibility
 	}

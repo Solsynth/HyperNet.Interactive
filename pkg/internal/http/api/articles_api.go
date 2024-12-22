@@ -179,13 +179,15 @@ func editArticle(c *fiber.Ctx) error {
 	item.Categories = data.Categories
 	item.IsDraft = data.IsDraft
 	item.PublishedUntil = data.PublishedUntil
-	item.PublishedAt = data.PublishedAt
 	item.VisibleUsers = data.VisibleUsers
 	item.InvisibleUsers = data.InvisibleUsers
 
 	// Preload publisher data
 	item.Publisher = publisher
 
+	if item.PublishedAt == nil {
+		item.PublishedAt = data.PublishedAt
+	}
 	if data.Visibility != nil {
 		item.Visibility = *data.Visibility
 	}

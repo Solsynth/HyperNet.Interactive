@@ -460,9 +460,6 @@ func EditPost(item models.Post) (models.Post, error) {
 	if item.Alias != nil && len(*item.Alias) == 0 {
 		item.Alias = nil
 	}
-	if item.PublishedAt != nil && item.PublishedAt.UTC().Unix() < item.CreatedAt.UTC().Unix() {
-		return item, fmt.Errorf("post cannot be published before it is created")
-	}
 
 	if item.Alias != nil {
 		re := regexp.MustCompile(`^[a-z0-9.-]+$`)
