@@ -129,10 +129,15 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 }
 
 func FilterPostWithCategory(tx *gorm.DB, alias string) *gorm.DB {
-	return tx.Joins("JOIN post_categories ON posts.id = post_categories.post_id").
+	subQuery := tx.Table("posts").
+		Select("DISTINCT posts.id").
+		Joins("JOIN post_categories ON posts.id = post_categories.post_id").
 		Joins("JOIN categories ON categories.id = post_categories.category_id").
-		Where("categories.alias IN ?", strings.Split(alias, ",")).
-		Distinct("posts.id")
+		Where("categories.alias IN ?", strings.Split(alias, ","))
+
+	return tx.Table("(?) as cateogry_subquery", subQuery).
+		Joins("JOIN posts ON posts.id = category_subquery.id").
+		Order("posts.published_at DESC")
 }
 
 func FilterPostWithTag(tx *gorm.DB, alias string) *gorm.DB {
