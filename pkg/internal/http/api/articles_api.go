@@ -1,12 +1,13 @@
 package api
 
 import (
+	"strconv"
+	"time"
+
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
-	"strconv"
-	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -178,6 +179,7 @@ func editArticle(c *fiber.Ctx) error {
 	item.Categories = data.Categories
 	item.IsDraft = data.IsDraft
 	item.PublishedUntil = data.PublishedUntil
+	item.PublishedAt = data.PublishedAt
 	item.VisibleUsers = data.VisibleUsers
 	item.InvisibleUsers = data.InvisibleUsers
 

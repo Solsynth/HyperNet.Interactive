@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
-	"strconv"
-	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -200,8 +201,9 @@ func editStory(c *fiber.Ctx) error {
 	item.Language = services.DetectLanguage(data.Content)
 	item.Tags = data.Tags
 	item.Categories = data.Categories
-	item.PublishedUntil = data.PublishedUntil
 	item.IsDraft = data.IsDraft
+	item.PublishedAt = data.PublishedAt
+	item.PublishedUntil = data.PublishedUntil
 	item.VisibleUsers = data.VisibleUsers
 	item.InvisibleUsers = data.InvisibleUsers
 
