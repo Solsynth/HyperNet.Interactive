@@ -2,17 +2,27 @@ package services
 
 import (
 	"errors"
-	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"strings"
+
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"gorm.io/gorm"
 )
 
-func ListCategory() ([]models.Category, error) {
+func SearchCategories(take int, offset int, probe string) ([]models.Category, error) {
+	probe = "%" + probe + "%"
+
 	var categories []models.Category
-	err := database.C.Find(&categories).Error
+	err := database.C.Where("alias LIKE ?", probe).Offset(offset).Limit(take).Find(&categories).Error
+
+	return categories, err
+}
+
+func ListCategory(take int, offset int) ([]models.Category, error) {
+	var categories []models.Category
+	err := database.C.Offset(offset).Limit(take).Find(&categories).Error
 
 	return categories, err
 }

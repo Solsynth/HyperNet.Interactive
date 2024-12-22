@@ -2,6 +2,7 @@ package api
 
 import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"github.com/gofiber/fiber/v2"
@@ -19,9 +20,23 @@ func getCategory(c *fiber.Ctx) error {
 }
 
 func listCategories(c *fiber.Ctx) error {
-	categories, err := services.ListCategory()
+	take := c.QueryInt("take", 0)
+	offset := c.QueryInt("offset", 0)
+	probe := c.Query("probe")
+
+	if take > 100 {
+		take = 100
+	}
+
+	var categories []models.Category
+	var err error
+	if len(probe) > 0 {
+		categories, err = services.SearchCategories(take, offset, probe)
+	} else {
+		categories, err = services.ListCategory(take, offset)
+	}
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(categories)
