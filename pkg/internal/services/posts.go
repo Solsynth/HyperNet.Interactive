@@ -575,6 +575,13 @@ func TruncatePostContent(post models.Post) models.Post {
 		}
 	}
 
+	if post.RepostTo != nil {
+		post.RepostTo = lo.ToPtr(TruncatePostContent(*post.RepostTo))
+	}
+	if post.ReplyTo != nil {
+		post.ReplyTo = lo.ToPtr(TruncatePostContent(*post.ReplyTo))
+	}
+
 	return post
 }
 
