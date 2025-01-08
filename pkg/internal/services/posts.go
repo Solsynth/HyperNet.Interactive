@@ -479,6 +479,9 @@ func EditPost(item models.Post) (models.Post, error) {
 		return item, err
 	}
 
+	database.C.Model(&item).Association("Categories").Replace(item.Categories)
+	database.C.Model(&item).Association("Tags").Replace(item.Tags)
+
 	err = database.C.Save(&item).Error
 
 	return item, err
