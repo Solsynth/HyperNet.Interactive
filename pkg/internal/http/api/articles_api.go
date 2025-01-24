@@ -142,7 +142,7 @@ func editArticle(c *fiber.Ctx) error {
 	if err := database.C.Where(models.Post{
 		BaseModel:   cruda.BaseModel{ID: uint(id)},
 		PublisherID: publisher.ID,
-	}).First(&item).Error; err != nil {
+	}).Preload("Publisher").First(&item).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 

@@ -12,6 +12,7 @@ import (
 	localCache "git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/proto"
+	pproto "git.solsynth.dev/hypernet/paperclip/pkg/proto"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"github.com/eko/gocache/lib/v4/cache"
@@ -402,6 +403,9 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 		return item, err
 	}
 
+	item.Publisher = user
+	_ = updatePostAttachmentVisibility(item)
+
 	// Notify the original poster its post has been replied
 	if item.ReplyID != nil {
 		var op models.Post
@@ -479,16 +483,70 @@ func EditPost(item models.Post) (models.Post, error) {
 		return item, err
 	}
 
-	database.C.Model(&item).Association("Categories").Replace(item.Categories)
-	database.C.Model(&item).Association("Tags").Replace(item.Tags)
+	_ = database.C.Model(&item).Association("Categories").Replace(item.Categories)
+	_ = database.C.Model(&item).Association("Tags").Replace(item.Tags)
 
+	pub := item.Publisher
 	err = database.C.Save(&item).Error
+
+	if err == nil {
+		item.Publisher = pub
+		_ = updatePostAttachmentVisibility(item)
+	}
 
 	return item, err
 }
 
+func updatePostAttachmentVisibility(item models.Post) error {
+	if item.Publisher.AccountID == nil {
+		return nil
+	}
+
+	if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
+		conn, err := gap.Nx.GetClientGrpcConn("uc")
+		if err != nil {
+			return nil
+		}
+
+		pc := pproto.NewAttachmentServiceClient(conn)
+		_, err = pc.UpdateVisibility(context.Background(), &pproto.UpdateVisibilityRequest{
+			Rid: lo.Map(val, func(item string, _ int) string {
+				return item
+			}),
+			UserId:      lo.ToPtr(uint64(*item.Publisher.AccountID)),
+			IsIndexable: item.Visibility == models.PostVisibilityAll,
+		})
+	}
+
+	return nil
+}
+
 func DeletePost(item models.Post) error {
-	return database.C.Delete(&item).Error
+	if err := database.C.Delete(&item).Error; err != nil {
+		return err
+	}
+
+	// Cleaning up related attachments
+	if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
+		if item.Publisher.AccountID == nil {
+			return nil
+		}
+
+		conn, err := gap.Nx.GetClientGrpcConn("uc")
+		if err != nil {
+			return nil
+		}
+
+		pc := pproto.NewAttachmentServiceClient(conn)
+		_, err = pc.DeleteAttachment(context.Background(), &pproto.DeleteAttachmentRequest{
+			Rid: lo.Map(val, func(item string, _ int) string {
+				return item
+			}),
+			UserId: lo.ToPtr(uint64(*item.Publisher.AccountID)),
+		})
+	}
+
+	return nil
 }
 
 func ReactPost(user authm.Account, reaction models.Reaction) (bool, models.Reaction, error) {
