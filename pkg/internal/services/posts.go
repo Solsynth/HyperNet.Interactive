@@ -513,10 +513,10 @@ func updatePostAttachmentVisibility(item models.Post) error {
 		}
 
 		pc := pproto.NewAttachmentServiceClient(conn)
-		_, err = pc.UpdateVisibility(context.Background(), &pproto.UpdateVisibilityRequest{
-			Rid: lo.Map(val, func(item string, _ int) string {
-				return item
-			}),
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		resp, err := pc.UpdateVisibility(ctx, &pproto.UpdateVisibilityRequest{
+			Rid:         val,
 			UserId:      lo.ToPtr(uint64(*item.Publisher.AccountID)),
 			IsIndexable: item.Visibility == models.PostVisibilityAll,
 		})
@@ -525,7 +525,9 @@ func updatePostAttachmentVisibility(item models.Post) error {
 			return err
 		}
 
-		log.Debug().Any("attachments", val).Msg("Post attachment visibility updated.")
+		log.Debug().Any("attachments", val).Int32("count", resp.Count).Msg("Post attachment visibility updated.")
+	} else {
+		log.Debug().Any("attachments", val).Msg("Post attachment visibility update skipped...")
 	}
 
 	return nil
