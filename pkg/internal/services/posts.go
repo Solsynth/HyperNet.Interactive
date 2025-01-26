@@ -518,11 +518,12 @@ func updatePostAttachmentVisibility(item models.Post) error {
 			UserId:      lo.ToPtr(uint64(*item.Publisher.AccountID)),
 			IsIndexable: item.Visibility == models.PostVisibilityAll,
 		})
-
 		if err != nil {
 			log.Error().Any("attachments", val).Err(err).Msg("An error occurred when updating post attachment visibility...")
 			return err
 		}
+
+		log.Debug().Any("attachments", val).Msg("Post attachment visibility updated.")
 	}
 
 	return nil
