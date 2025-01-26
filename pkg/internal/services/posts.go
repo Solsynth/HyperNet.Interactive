@@ -505,7 +505,7 @@ func updatePostAttachmentVisibility(item models.Post) error {
 		return nil
 	}
 
-	if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
+	if val, ok := item.Body["attachments"].([]any); ok && len(val) > 0 {
 		conn, err := gap.Nx.GetClientGrpcConn("uc")
 		if err != nil {
 			log.Error().Err(err).Msg("An error occurred when getting grpc connection to Paperclip...")
@@ -516,7 +516,9 @@ func updatePostAttachmentVisibility(item models.Post) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		resp, err := pc.UpdateVisibility(ctx, &pproto.UpdateVisibilityRequest{
-			Rid:         val,
+			Rid: lo.Map(val, func(item any, _ int) string {
+				return item.(string)
+			}),
 			UserId:      lo.ToPtr(uint64(*item.Publisher.AccountID)),
 			IsIndexable: item.Visibility == models.PostVisibilityAll,
 		})
