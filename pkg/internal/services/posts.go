@@ -498,6 +498,8 @@ func EditPost(item models.Post) (models.Post, error) {
 }
 
 func updatePostAttachmentVisibility(item models.Post) error {
+	log.Debug().Any("attachments", item.Body["attachments"]).Msg("Updating post attachments visibility...")
+
 	if item.Publisher.AccountID == nil {
 		log.Warn().Msg("Post publisher did not have account id, skip updating attachments visibility...")
 		return nil
