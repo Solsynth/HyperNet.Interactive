@@ -499,12 +499,14 @@ func EditPost(item models.Post) (models.Post, error) {
 
 func updatePostAttachmentVisibility(item models.Post) error {
 	if item.Publisher.AccountID == nil {
+		log.Warn().Msg("Post publisher did not have account id, skip updating attachments visibility...")
 		return nil
 	}
 
 	if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
 		conn, err := gap.Nx.GetClientGrpcConn("uc")
 		if err != nil {
+			log.Error().Err(err).Msg("An error occurred when getting grpc connection to Paperclip...")
 			return nil
 		}
 
@@ -516,6 +518,11 @@ func updatePostAttachmentVisibility(item models.Post) error {
 			UserId:      lo.ToPtr(uint64(*item.Publisher.AccountID)),
 			IsIndexable: item.Visibility == models.PostVisibilityAll,
 		})
+
+		if err != nil {
+			log.Error().Any("attachments", val).Err(err).Msg("An error occurred when updating post attachment visibility...")
+			return err
+		}
 	}
 
 	return nil
