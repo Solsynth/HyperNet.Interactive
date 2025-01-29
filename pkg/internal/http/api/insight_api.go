@@ -63,6 +63,7 @@ func getPostInsight(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
+		marshal.Set(contx, services.GetPostInsightCacheKey(item.ID), response)
 	}
 
 	return c.JSON(fiber.Map{
