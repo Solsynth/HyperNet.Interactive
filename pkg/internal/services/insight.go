@@ -41,7 +41,7 @@ func GeneratePostInsights(post models.Post, user uint) (string, error) {
 		UserId: uint64(user),
 	})
 	if err != nil {
-		return resp.Response, err
+		return "", err
 	}
 
 	return resp.Response, nil
