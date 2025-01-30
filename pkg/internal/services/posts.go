@@ -558,6 +558,9 @@ func DeletePost(item models.Post) error {
 			}),
 			UserId: lo.ToPtr(uint64(*item.Publisher.AccountID)),
 		})
+		if err != nil {
+			log.Error().Err(err).Msg("An error occurred when deleting post attachment...")
+		}
 	}
 
 	return nil

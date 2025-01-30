@@ -10,6 +10,7 @@ var AutoMaintainRange = []any{
 	&models.Category{},
 	&models.Tag{},
 	&models.Post{},
+	&models.PostInsight{},
 	&models.Subscription{},
 }
 

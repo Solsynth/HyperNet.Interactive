@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
-	"time"
 
 	"gorm.io/datatypes"
 )
@@ -78,4 +79,12 @@ type PostArticleBody struct {
 	Description *string  `json:"description"`
 	Content     string   `json:"content"`
 	Attachments []string `json:"attachments"`
+}
+
+type PostInsight struct {
+	cruda.BaseModel
+
+	Response string `json:"response"`
+	Post     Post   `json:"post"`
+	PostID   uint   `json:"post_id"`
 }
