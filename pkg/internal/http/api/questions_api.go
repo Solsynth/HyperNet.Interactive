@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
@@ -16,8 +19,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
-	"strconv"
-	"time"
 )
 
 func createQuestion(c *fiber.Ctx) error {
@@ -285,10 +286,14 @@ func selectQuestionAnswer(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 
+	var body models.PostQuestionBody
+	raw, _ := jsoniter.Marshal(item.Body)
+	_ = jsoniter.Unmarshal(raw, &body)
+
 	if item.LockedAt != nil {
 		return fiber.NewError(fiber.StatusForbidden, "post was locked")
 	}
-	if val, ok := item.Body["answer"].(uint); ok && val > 0 {
+	if body.Answer != nil && *body.Answer > 0 {
 		return fiber.NewError(fiber.StatusBadRequest, "question already has an answer")
 	}
 
@@ -304,6 +309,24 @@ func selectQuestionAnswer(c *fiber.Ctx) error {
 	if item, err = services.EditPost(item); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
+		// Give the reward
+		if body.Reward > 0 && answer.Publisher.AccountID != nil {
+			conn, err := gap.Nx.GetClientGrpcConn("wa")
+			if err != nil {
+				return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("unable to connect Wallet: %v", err))
+			}
+			wc := wproto.NewPaymentServiceClient(conn)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+			defer cancel()
+			if _, err := wc.MakeTransactionWithAccount(ctx, &wproto.MakeTransactionWithAccountRequest{
+				Amount:         body.Reward,
+				Remark:         fmt.Sprintf("Answer of question %d got selected reward", item.ID),
+				PayeeAccountId: lo.ToPtr(uint64(*answer.Publisher.AccountID)),
+			}); err != nil {
+				return fiber.NewError(fiber.StatusPaymentRequired, fmt.Sprintf("failed to handle payment: %v", err))
+			}
+		}
+
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.edit.answer",
