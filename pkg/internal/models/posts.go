@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	PostTypeStory   = "story"
-	PostTypeArticle = "article"
+	PostTypeStory    = "story"
+	PostTypeArticle  = "article"
+	PostTypeQuestion = "question"
 )
 
 type PostVisibilityLevel = int8
@@ -79,6 +80,12 @@ type PostArticleBody struct {
 	Description *string  `json:"description"`
 	Content     string   `json:"content"`
 	Attachments []string `json:"attachments"`
+}
+
+type PostQuestionBody struct {
+	PostStoryBody
+	Answer *uint   `json:"answer"`
+	Reward float64 `json:"reward"`
 }
 
 type PostInsight struct {

@@ -36,6 +36,12 @@ func MapAPIs(app *fiber.App, baseURL string) {
 			articles.Post("/", createArticle)
 			articles.Put("/:postId", editArticle)
 		}
+		questions := api.Group("/questions").Name("Question API")
+		{
+			questions.Post("/", createQuestion)
+			questions.Put("/:postId", editQuestion)
+			questions.Put("/:postId/answer", selectQuestionAnswer)
+		}
 
 		posts := api.Group("/posts").Name("Posts API")
 		{
