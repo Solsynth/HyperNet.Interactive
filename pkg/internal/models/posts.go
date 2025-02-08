@@ -13,6 +13,7 @@ const (
 	PostTypeStory    = "story"
 	PostTypeArticle  = "article"
 	PostTypeQuestion = "question"
+	PostTypeVideo    = "video"
 )
 
 type PostVisibilityLevel = int8
@@ -86,6 +87,17 @@ type PostQuestionBody struct {
 	PostStoryBody
 	Answer *uint   `json:"answer"`
 	Reward float64 `json:"reward"`
+}
+
+type PostVideoBody struct {
+	Thumbnail   *string           `json:"thumbnail"`
+	Title       string            `json:"title"`
+	Description *string           `json:"description"`
+	Location    *string           `json:"location"`
+	Video       string            `json:"video"`
+	IsLive      bool              `json:"is_live"`
+	IsLiveEnded bool              `json:"is_live_ended"`
+	Subtitles   map[string]string `json:"subtitles"`
 }
 
 type PostInsight struct {
