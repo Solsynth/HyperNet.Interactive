@@ -207,7 +207,11 @@ func editQuestion(c *fiber.Ctx) error {
 		item.PublishedAt = data.PublishedAt
 	}
 
-	body := models.PostQuestionBody{
+	var body models.PostQuestionBody
+	raw, _ := jsoniter.Marshal(item.Body)
+	_ = jsoniter.Unmarshal(raw, &body)
+
+	newBody := models.PostQuestionBody{
 		PostStoryBody: models.PostStoryBody{
 			Thumbnail:   data.Thumbnail,
 			Title:       data.Title,
@@ -215,15 +219,15 @@ func editQuestion(c *fiber.Ctx) error {
 			Location:    data.Location,
 			Attachments: data.Attachments,
 		},
-		Reward: item.Body["reward"].(float64),
+		Reward: body.Reward,
 	}
 
-	var bodyMapping map[string]any
-	rawBody, _ := jsoniter.Marshal(body)
-	_ = jsoniter.Unmarshal(rawBody, &bodyMapping)
+	var newBodyMapping map[string]any
+	rawBody, _ := jsoniter.Marshal(newBody)
+	_ = jsoniter.Unmarshal(rawBody, &newBodyMapping)
 
 	item.Alias = data.Alias
-	item.Body = bodyMapping
+	item.Body = newBodyMapping
 	item.Language = services.DetectLanguage(data.Content)
 	item.Tags = data.Tags
 	item.Categories = data.Categories
