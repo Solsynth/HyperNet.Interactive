@@ -220,6 +220,7 @@ func editQuestion(c *fiber.Ctx) error {
 			Attachments: data.Attachments,
 		},
 		Reward: body.Reward,
+		Answer: body.Answer,
 	}
 
 	var newBodyMapping map[string]any
