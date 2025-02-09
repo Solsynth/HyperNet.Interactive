@@ -1,6 +1,9 @@
 package api
 
 import (
+	"strconv"
+	"time"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
@@ -13,8 +16,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
-	"strconv"
-	"time"
 )
 
 func createVideo(c *fiber.Ctx) error {
@@ -28,7 +29,7 @@ func createVideo(c *fiber.Ctx) error {
 		Video          string            `json:"video" validate:"required"`
 		Alias          *string           `json:"alias"`
 		Title          string            `json:"title" validate:"required"`
-		Description    *string           `json:"description" validate:"max=4096"`
+		Description    *string           `json:"description"`
 		Location       *string           `json:"location"`
 		Thumbnail      *string           `json:"thumbnail"`
 		Subtitles      map[string]string `json:"subtitles"`
@@ -116,7 +117,7 @@ func editVideo(c *fiber.Ctx) error {
 		Video          string            `json:"video" validate:"required"`
 		Alias          *string           `json:"alias"`
 		Title          string            `json:"title" validate:"required"`
-		Description    *string           `json:"description" validate:"max=4096"`
+		Description    *string           `json:"description"`
 		Location       *string           `json:"location"`
 		Thumbnail      *string           `json:"thumbnail"`
 		Subtitles      map[string]string `json:"subtitles"`
