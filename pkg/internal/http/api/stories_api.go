@@ -44,6 +44,7 @@ func createStory(c *fiber.Ctx) error {
 		IsDraft        bool              `json:"is_draft"`
 		ReplyTo        *uint             `json:"reply_to"`
 		RepostTo       *uint             `json:"repost_to"`
+		Poll           *uint             `json:"poll"`
 	}
 
 	if err := exts.BindAndValidate(c, &data); err != nil {
@@ -82,6 +83,7 @@ func createStory(c *fiber.Ctx) error {
 		VisibleUsers:   data.VisibleUsers,
 		InvisibleUsers: data.InvisibleUsers,
 		PublisherID:    publisher.ID,
+		PollID:         data.Poll,
 	}
 
 	if item.PublishedAt == nil {
@@ -149,6 +151,7 @@ func editStory(c *fiber.Ctx) error {
 		InvisibleUsers []uint            `json:"invisible_users_list"`
 		Visibility     *int8             `json:"visibility"`
 		IsDraft        bool              `json:"is_draft"`
+		Poll           *uint             `json:"poll"`
 	}
 
 	if err := exts.BindAndValidate(c, &data); err != nil {
@@ -206,6 +209,7 @@ func editStory(c *fiber.Ctx) error {
 	item.PublishedUntil = data.PublishedUntil
 	item.VisibleUsers = data.VisibleUsers
 	item.InvisibleUsers = data.InvisibleUsers
+	item.PollID = data.Poll
 
 	// Preload publisher data
 	item.Publisher = publisher

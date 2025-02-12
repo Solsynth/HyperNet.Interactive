@@ -58,6 +58,9 @@ type Post struct {
 	TotalUpvote   int `json:"total_upvote"`
 	TotalDownvote int `json:"total_downvote"`
 
+	PollID *uint `json:"poll_id"`
+	Poll   *Poll `json:"poll"`
+
 	RealmID *uint        `json:"realm_id"`
 	Realm   *authm.Realm `json:"realm" gorm:"-"`
 
