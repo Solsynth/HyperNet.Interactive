@@ -64,6 +64,15 @@ func MapAPIs(app *fiber.App, baseURL string) {
 			posts.Get("/:postId/replies/featured", listPostFeaturedReply)
 		}
 
+		polls := api.Group("/polls").Name("Polls API")
+		{
+			polls.Get("/:pollId", getPoll)
+			polls.Post("/", createPoll)
+			polls.Put("/:pollId", updatePoll)
+			polls.Delete("/:pollId", deletePoll)
+			polls.Post("/:pollId/answer", answerPoll)
+		}
+
 		subscriptions := api.Group("/subscriptions").Name("Subscriptions API")
 		{
 			subscriptions.Get("/users/:userId", getSubscriptionOnUser)
