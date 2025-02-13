@@ -37,7 +37,7 @@ func AddPollAnswer(poll models.Poll, answer models.PollAnswer) (models.PollAnswe
 
 func GetPollMetric(poll models.Poll) models.PollMetric {
 	var answers []models.PollAnswer
-	if err := database.C.Where("poll_id = ?", poll.ID).Find(&answers); err != nil {
+	if err := database.C.Where("poll_id = ?", poll.ID).Find(&answers).Error; err != nil {
 		return models.PollMetric{}
 	}
 
