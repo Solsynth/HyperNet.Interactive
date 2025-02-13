@@ -25,8 +25,14 @@ func AddPollAnswer(poll models.Poll, answer models.PollAnswer) (models.PollAnswe
 	answer.PollID = poll.ID
 
 	var count int64
-	if err := database.C.Model(&models.PollAnswer{}).Where("poll_id = ? AND account_id = ?", poll.ID, answer.AccountID).Count(&count).Error; err != nil {
-		return answer, fmt.Errorf("you already answered the poll")
+	if err := database.C.Model(&models.PollAnswer{}).
+		Where("poll_id = ? AND account_id = ?", poll.ID, answer.AccountID).
+		Count(&count).Error; err != nil {
+		if err := database.C.Model(&models.PollAnswer{}).Where("poll_id = ? AND account_id = ?", poll.ID, answer.AccountID).Update("answer", answer.Answer).Error; err != nil {
+			return answer, fmt.Errorf("failed to update your answer")
+		}
+
+		return answer, nil
 	}
 	if err := database.C.Create(&answer).Error; err != nil {
 		return answer, err

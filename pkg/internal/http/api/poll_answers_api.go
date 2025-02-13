@@ -12,6 +12,22 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func getMyPollAnswer(c *fiber.Ctx) error {
+	if err := sec.EnsureAuthenticated(c); err != nil {
+		return err
+	}
+	user := c.Locals("user").(authm.Account)
+
+	pollId, _ := c.ParamsInt("pollId")
+
+	var answer models.PollAnswer
+	if err := database.C.Where("poll_id = ? AND account_id = ?", pollId, user.ID).First(&answer).Error; err != nil {
+		return fiber.NewError(fiber.StatusNotFound, err.Error())
+	}
+
+	return c.JSON(answer)
+}
+
 func answerPoll(c *fiber.Ctx) error {
 	pollId, _ := c.ParamsInt("pollId")
 
