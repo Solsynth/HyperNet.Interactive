@@ -49,8 +49,14 @@ func GetPollMetric(poll models.Poll) models.PollMetric {
 		byOptions[answer.Answer]++
 	}
 
+	byOptionsPercentage := make(map[string]float64)
+	for _, option := range poll.Options {
+		byOptionsPercentage[option.ID] = float64(byOptions[option.ID]) / float64(len(answers))
+	}
+
 	return models.PollMetric{
-		TotalAnswer: int64(len(answers)),
-		ByOptions:   byOptions,
+		TotalAnswer:         int64(len(answers)),
+		ByOptions:           byOptions,
+		ByOptionsPercentage: byOptionsPercentage,
 	}
 }

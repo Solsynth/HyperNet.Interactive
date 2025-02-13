@@ -71,6 +71,7 @@ func MapAPIs(app *fiber.App, baseURL string) {
 			polls.Put("/:pollId", updatePoll)
 			polls.Delete("/:pollId", deletePoll)
 			polls.Post("/:pollId/answer", answerPoll)
+			polls.Get("/:pollId/answer", getMyPollAnswer)
 		}
 
 		subscriptions := api.Group("/subscriptions").Name("Subscriptions API")

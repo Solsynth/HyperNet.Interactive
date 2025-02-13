@@ -18,8 +18,9 @@ type Poll struct {
 }
 
 type PollMetric struct {
-	TotalAnswer int64            `json:"total_answer"`
-	ByOptions   map[string]int64 `json:"by_options"`
+	TotalAnswer         int64              `json:"total_answer"`
+	ByOptions           map[string]int64   `json:"by_options"`
+	ByOptionsPercentage map[string]float64 `json:"by_options_percentage"`
 }
 
 type PollOption struct {
