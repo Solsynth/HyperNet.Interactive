@@ -1,10 +1,12 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"gorm.io/gorm"
 )
 
 func NewPoll(poll models.Poll) (models.Poll, error) {
@@ -24,16 +26,21 @@ func UpdatePoll(poll models.Poll) (models.Poll, error) {
 func AddPollAnswer(poll models.Poll, answer models.PollAnswer) (models.PollAnswer, error) {
 	answer.PollID = poll.ID
 
-	var count int64
+	var currentAnswer models.PollAnswer
 	if err := database.C.Model(&models.PollAnswer{}).
 		Where("poll_id = ? AND account_id = ?", poll.ID, answer.AccountID).
-		Count(&count).Error; err != nil {
-		if err := database.C.Model(&models.PollAnswer{}).Where("poll_id = ? AND account_id = ?", poll.ID, answer.AccountID).Update("answer", answer.Answer).Error; err != nil {
+		First(&currentAnswer).Error; err == nil {
+		if err := database.C.Model(&currentAnswer).
+			Where("id = ?", currentAnswer.ID).
+			Updates(&models.PollAnswer{Answer: answer.Answer}).Error; err != nil {
 			return answer, fmt.Errorf("failed to update your answer")
 		}
 
 		return answer, nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return answer, err
 	}
+
 	if err := database.C.Create(&answer).Error; err != nil {
 		return answer, err
 	}
