@@ -144,7 +144,7 @@ func NotifyUserSubscription(poster models.Publisher, item models.Post, content s
 	}
 
 	var subscriptions []models.Subscription
-	if err := database.C.Where("account_id = ?", poster.ID).Preload("Follower").Find(&subscriptions).Error; err != nil {
+	if err := database.C.Where("account_id = ?", poster.ID).Find(&subscriptions).Error; err != nil {
 		return fmt.Errorf("unable to get subscriptions: %v", err)
 	}
 
@@ -158,7 +158,7 @@ func NotifyUserSubscription(poster models.Publisher, item models.Post, content s
 
 	userIDs := make([]uint64, 0, len(subscriptions))
 	for _, subscription := range subscriptions {
-		userIDs = append(userIDs, uint64(subscription.Follower.ID))
+		userIDs = append(userIDs, uint64(subscription.FollowerID))
 	}
 
 	if item.Visibility == models.PostVisibilitySelected {
@@ -192,7 +192,7 @@ func NotifyTagSubscription(poster models.Tag, og models.Publisher, item models.P
 	}
 
 	var subscriptions []models.Subscription
-	if err := database.C.Where("tag_id = ?", poster.ID).Preload("Follower").Find(&subscriptions).Error; err != nil {
+	if err := database.C.Where("tag_id = ?", poster.ID).Find(&subscriptions).Error; err != nil {
 		return fmt.Errorf("unable to get subscriptions: %v", err)
 	}
 
@@ -206,7 +206,7 @@ func NotifyTagSubscription(poster models.Tag, og models.Publisher, item models.P
 
 	userIDs := make([]uint64, 0, len(subscriptions))
 	for _, subscription := range subscriptions {
-		userIDs = append(userIDs, uint64(subscription.Follower.ID))
+		userIDs = append(userIDs, uint64(subscription.FollowerID))
 	}
 
 	if item.Visibility == models.PostVisibilitySelected {
@@ -240,7 +240,7 @@ func NotifyCategorySubscription(poster models.Category, og models.Publisher, ite
 	}
 
 	var subscriptions []models.Subscription
-	if err := database.C.Where("category_id = ?", poster.ID).Preload("Follower").Find(&subscriptions).Error; err != nil {
+	if err := database.C.Where("category_id = ?", poster.ID).Find(&subscriptions).Error; err != nil {
 		return fmt.Errorf("unable to get subscriptions: %v", err)
 	}
 
@@ -254,7 +254,7 @@ func NotifyCategorySubscription(poster models.Category, og models.Publisher, ite
 
 	userIDs := make([]uint64, 0, len(subscriptions))
 	for _, subscription := range subscriptions {
-		userIDs = append(userIDs, uint64(subscription.Follower.ID))
+		userIDs = append(userIDs, uint64(subscription.FollowerID))
 	}
 
 	if item.Visibility == models.PostVisibilitySelected {
