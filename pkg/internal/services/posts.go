@@ -73,7 +73,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		// Query the publishers according to the user's relationship
 		var publishers []models.Publisher
 		database.C.Where(
-			"id IN ? AND type = ?",
+			"account_id IN ? AND type = ?",
 			lo.Uniq(append(append(userFriendList, userGotBlockList...), userBlocklist...)),
 			models.PublisherTypePersonal,
 		).Find(&publishers)
@@ -109,13 +109,13 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 
 	tx = tx.Where(
 		"publisher_id = ? OR visibility != ? OR "+
-			//"(visibility = ? AND publisher_id IN ?) OR "+
+			"(visibility = ? AND publisher_id IN ?) OR "+
 			"(visibility = ? AND ?) OR "+
 			"(visibility = ? AND NOT ?)",
 		user.ID,
 		NoneVisibility,
-		//FriendsVisibility,
-		//allowlist,
+		FriendsVisibility,
+		allowlist,
 		SelectedVisibility,
 		datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
 		FilteredVisibility,
