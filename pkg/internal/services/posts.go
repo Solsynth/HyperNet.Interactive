@@ -431,7 +431,11 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 	}
 
 	// Notify the subscriptions
-	if content, ok := item.Body["content"].(string); ok {
+	if item.ReplyID == nil {
+		content, ok := item.Body["content"].(string)
+		if !ok {
+			content = "Posted a post"
+		}
 		var title *string
 		title, _ = item.Body["title"].(*string)
 		go func() {
