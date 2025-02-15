@@ -6,7 +6,6 @@ type Subscription struct {
 	cruda.BaseModel
 
 	FollowerID uint       `json:"follower_id"`
-	Follower   Publisher  `json:"follower"`
 	AccountID  *uint      `json:"account_id,omitempty"`
 	Account    *Publisher `json:"account,omitempty"`
 	TagID      *uint      `json:"tag_id,omitempty"`
