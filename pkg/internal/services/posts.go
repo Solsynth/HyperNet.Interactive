@@ -84,7 +84,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 			}
 			return lo.Contains(userFriendList, *item.AccountID)
 		}), func(item models.Publisher, index int) uint {
-			return uint(item.ID)
+			return item.ID
 		})
 		invisibleList = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
 			if item.AccountID == nil {
@@ -92,7 +92,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 			}
 			return lo.Contains(userBlocklist, *item.AccountID)
 		}), func(item models.Publisher, index int) uint {
-			return uint(item.ID)
+			return item.ID
 		})
 
 		_ = marshal.Set(
@@ -109,13 +109,13 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 
 	tx = tx.Where(
 		"publisher_id = ? OR visibility != ? OR "+
-			"(visibility = ? AND publisher_id IN ?) OR "+
+			//"(visibility = ? AND publisher_id IN ?) OR "+
 			"(visibility = ? AND ?) OR "+
 			"(visibility = ? AND NOT ?)",
 		user.ID,
 		NoneVisibility,
-		FriendsVisibility,
-		allowlist,
+		//FriendsVisibility,
+		//allowlist,
 		SelectedVisibility,
 		datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
 		FilteredVisibility,
