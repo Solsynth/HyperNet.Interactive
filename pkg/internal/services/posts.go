@@ -408,6 +408,13 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 
 	// Notify the original poster its post has been replied
 	if item.ReplyID != nil {
+		content, ok := item.Body["content"].(string)
+		if !ok {
+			content = "Posted a post"
+		} else {
+			content = TruncatePostContentShort(content)
+		}
+
 		var op models.Post
 		if err := database.C.
 			Where("id = ?", item.ReplyID).
@@ -417,11 +424,11 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 				log.Debug().Uint("user", *op.Publisher.AccountID).Msg("Notifying the original poster their post got replied...")
 				err = NotifyPosterAccount(
 					op.Publisher,
-					op,
+					item,
 					"Post got replied",
-					fmt.Sprintf("%s (%s) replied your post (#%d).", user.Nick, user.Name, op.ID),
-					"interactive.reply",
-					fmt.Sprintf("%s replied you", user.Nick),
+					fmt.Sprintf("%s (%s) replied you: %s", user.Nick, user.Name, content),
+					"interactive.feedback",
+					fmt.Sprintf("%s replied your post #%d", user.Nick, *item.ReplyID),
 				)
 				if err != nil {
 					log.Error().Err(err).Msg("An error occurred when notifying user...")
