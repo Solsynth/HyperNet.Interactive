@@ -14,7 +14,7 @@ import (
 )
 
 func listRecommendation(c *fiber.Ctx) error {
-	const featuredMax = 3
+	const featuredMax = 5
 
 	posts, err := services.GetFeaturedPosts(featuredMax)
 	if err != nil {
