@@ -7,6 +7,12 @@ import (
 func MapAPIs(app *fiber.App, baseURL string) {
 	api := app.Group(baseURL).Name("API")
 	{
+		activitypub := api.Group("/activitypub").Name("ActivityPub API")
+		{
+			activitypub.Get("/publishers/:name", apGetPublisher)
+			activitypub.Get("/posts", apGetPost)
+		}
+
 		publishers := api.Group("/publishers").Name("Publisher API")
 		{
 			publishers.Get("/", listRelatedPublisher)

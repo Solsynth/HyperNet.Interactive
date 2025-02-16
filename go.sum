@@ -99,6 +99,8 @@ github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uq
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=
 github.com/go-ap/activitypub v0.0.0-20250124194921-d52b4c694e14 h1:4VkepceDBxPt9BwsHncwtwIZCCgCuxctFHfosz8aWQA=
 github.com/go-ap/activitypub v0.0.0-20250124194921-d52b4c694e14/go.mod h1:IO2PtAsxfGXN5IHrPuOslENFbq7MprYLNOyiiOELoRQ=
+github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581 h1:73sFEdBsWBTBut0aDMPgt8HRuMO+ML0fd8AA/zjO8BQ=
+github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581/go.mod h1:IO2PtAsxfGXN5IHrPuOslENFbq7MprYLNOyiiOELoRQ=
 github.com/go-ap/errors v0.0.0-20250124135319-3da8adefd4a9 h1:AJBGzuJVgfkKF3LoXCNQfH9yWmsVDV/oPDJE/zeXOjE=
 github.com/go-ap/errors v0.0.0-20250124135319-3da8adefd4a9/go.mod h1:Vkh+Z3f24K8nMsJKXo1FHn5ebPsXvB/WDH5JRtYqdNo=
 github.com/go-ap/jsonld v0.0.0-20221030091449-f2a191312c73 h1:GMKIYXyXPGIp+hYiWOhfqK4A023HdgisDT4YGgf99mw=

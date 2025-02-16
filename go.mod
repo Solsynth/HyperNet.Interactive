@@ -36,7 +36,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/go-ap/activitypub v0.0.0-20250124194921-d52b4c694e14 // indirect
+	github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581 // indirect
 	github.com/go-ap/errors v0.0.0-20250124135319-3da8adefd4a9 // indirect
 	github.com/go-ap/jsonld v0.0.0-20221030091449-f2a191312c73 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
