@@ -82,5 +82,16 @@ func EditPublisher(user authm.Account, publisher models.Publisher) (models.Publi
 }
 
 func DeletePublisher(publisher models.Publisher) error {
-	return database.C.Delete(&publisher).Error
+	tx := database.C.Begin()
+
+	if err := tx.Where("publisher_id = ?", publisher.ID).Delete(&models.Post{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Delete(&publisher).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
