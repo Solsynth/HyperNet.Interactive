@@ -19,5 +19,21 @@ func NewFlag(post models.Post, account uint) (models.PostFlag, error) {
 	if err := database.C.Save(&flag).Error; err != nil {
 		return flag, err
 	}
+	if err := FlagCalculateCollapseStatus(post); err != nil {
+		return flag, err
+	}
 	return flag, nil
+}
+
+func FlagCalculateCollapseStatus(post models.Post) error {
+	collapseLimit := 0.5
+
+	var flagCount int64
+	if err := database.C.Model(&models.PostFlag{}).Where("post_id = ?", post.ID).Count(&flagCount).Error; err != nil {
+		return err
+	}
+	if float64(flagCount)/float64(post.TotalViews) >= collapseLimit {
+		return database.C.Model(&post).Update("is_collapsed", true).Error
+	}
+	return nil
 }

@@ -52,6 +52,7 @@ type Post struct {
 	PinnedAt *time.Time `json:"pinned_at"`
 	LockedAt *time.Time `json:"locked_at"`
 
+	IsCollapsed    bool       `json:"is_collapsed"`
 	IsDraft        bool       `json:"is_draft"`
 	PublishedAt    *time.Time `json:"published_at"`
 	PublishedUntil *time.Time `json:"published_until"`
