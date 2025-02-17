@@ -1,9 +1,13 @@
 package services
 
 import (
+	"fmt"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var postViewQueue []models.PostView
@@ -35,7 +39,10 @@ func FlushPostViews() {
 	for _, item := range workingQueue {
 		updateRequiredPost[item.PostID] = true
 	}
-	_ = database.C.CreateInBatches(workingQueue, 1000).Error
+	workingQueue = lo.UniqBy(workingQueue, func(item models.PostView) string {
+		return fmt.Sprintf("%d:%d", item.PostID, item.AccountID)
+	})
+	_ = database.C.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(workingQueue, 1000).Error
 	for k := range updateRequiredPost {
 		var count int64
 		if err := database.C.Model(&models.PostView{}).Where("post_id = ?", k).Count(&count).Error; err != nil {
