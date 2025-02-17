@@ -430,10 +430,10 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 				log.Debug().Uint("user", *op.Publisher.AccountID).Msg("Notifying the original poster their post got replied...")
 				err = NotifyPosterAccount(
 					op.Publisher,
-					item,
+					op,
 					"Post got replied",
 					fmt.Sprintf("%s (%s) replied you: %s", user.Nick, user.Name, content),
-					"interactive.feedback",
+					"interactive.reply",
 					fmt.Sprintf("%s replied your post #%d", user.Nick, *item.ReplyID),
 				)
 				if err != nil {
