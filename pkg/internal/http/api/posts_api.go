@@ -2,13 +2,14 @@ package api
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"gorm.io/gorm"
-	"strconv"
-	"strings"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -114,13 +115,18 @@ func searchPost(c *fiber.Ctx) error {
 		return err
 	}
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	countTx := tx
 	count, err := services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC")
+	items, err := services.ListPost(tx, take, offset, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -150,13 +156,18 @@ func listPost(c *fiber.Ctx) error {
 		return err
 	}
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	countTx := tx
 	count, err := services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC")
+	items, err := services.ListPost(tx, take, offset, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -222,12 +233,17 @@ func listDraftPost(c *fiber.Ctx) error {
 
 	tx := services.FilterPostWithAuthorDraft(database.C, user.ID)
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	count, err := services.CountPost(tx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "created_at DESC", true)
+	items, err := services.ListPost(tx, take, offset, "created_at DESC", userId, true)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

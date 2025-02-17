@@ -25,8 +25,13 @@ func listRecommendation(c *fiber.Ctx) error {
 		return item.ID
 	})
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	tx := database.C.Where("id IN ?", postIdx)
-	newPosts, err := services.ListPost(tx, featuredMax, 0, "id ASC")
+	newPosts, err := services.ListPost(tx, featuredMax, 0, "id ASC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -65,6 +70,11 @@ func listRecommendationFriends(c *fiber.Ctx) error {
 
 	tx = tx.Where("publisher_id IN ?", friendList)
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	countTx := tx
 	count, err := services.CountPost(countTx)
 	if err != nil {
@@ -76,7 +86,7 @@ func listRecommendationFriends(c *fiber.Ctx) error {
 		order = "published_at DESC, (COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0)) DESC"
 	}
 
-	items, err := services.ListPost(tx, take, offset, order)
+	items, err := services.ListPost(tx, take, offset, order, userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -106,13 +116,18 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 		return err
 	}
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	countTx := tx
 	count, err := services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "RANDOM()")
+	items, err := services.ListPost(tx, take, offset, "RANDOM()", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

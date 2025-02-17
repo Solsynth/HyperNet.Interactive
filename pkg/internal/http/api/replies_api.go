@@ -2,9 +2,11 @@ package api
 
 import (
 	"fmt"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
+	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -35,12 +37,17 @@ func listPostReplies(c *fiber.Ctx) error {
 		tx = services.FilterPostWithTag(tx, c.Query("tag"))
 	}
 
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
 	count, err := services.CountPost(tx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC")
+	items, err := services.ListPost(tx, take, offset, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -54,6 +61,11 @@ func listPostReplies(c *fiber.Ctx) error {
 func listPostFeaturedReply(c *fiber.Ctx) error {
 	take := c.QueryInt("take", 0)
 	take = max(1, min(take, 3))
+
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
 
 	tx := database.C
 	var post models.Post
@@ -78,7 +90,7 @@ func listPostFeaturedReply(c *fiber.Ctx) error {
 		tx = services.FilterPostWithTag(tx, c.Query("tag"))
 	}
 
-	items, err := services.ListPost(tx, take, 0, "(COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0)) DESC, published_at DESC")
+	items, err := services.ListPost(tx, take, 0, "(COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0)) DESC, published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

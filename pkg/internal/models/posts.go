@@ -56,8 +56,10 @@ type Post struct {
 	PublishedAt    *time.Time `json:"published_at"`
 	PublishedUntil *time.Time `json:"published_until"`
 
-	TotalUpvote   int `json:"total_upvote"`
-	TotalDownvote int `json:"total_downvote"`
+	TotalUpvote          int   `json:"total_upvote"`
+	TotalDownvote        int   `json:"total_downvote"`
+	TotalViews           int64 `json:"total_views"`
+	TotalAggressiveViews int64 `json:"total_aggressive_views"`
 
 	PollID *uint `json:"poll_id"`
 	Poll   *Poll `json:"poll"`
@@ -110,4 +112,11 @@ type PostInsight struct {
 	Response string `json:"response"`
 	Post     Post   `json:"post"`
 	PostID   uint   `json:"post_id"`
+}
+
+type PostView struct {
+	AccountID uint      `json:"account_id" gorm:"primaryKey"`
+	PostID    uint      `json:"post_id" gorm:"primaryKey"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

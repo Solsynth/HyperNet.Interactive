@@ -262,7 +262,7 @@ func CountPostReactions(id uint) int64 {
 	return count
 }
 
-func ListPost(tx *gorm.DB, take int, offset int, order any, noReact ...bool) ([]*models.Post, error) {
+func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint, noReact ...bool) ([]*models.Post, error) {
 	if take > 100 {
 		take = 100
 	}
@@ -330,6 +330,12 @@ func ListPost(tx *gorm.DB, take int, offset int, order any, noReact ...bool) ([]
 				}
 			}
 		}
+	}
+
+	if user != nil {
+		AddPostViews(lo.Map(items, func(item *models.Post, index int) models.Post {
+			return *item
+		}), *user)
 	}
 
 	return items, nil

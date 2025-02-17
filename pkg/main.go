@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
 	pkg "git.solsynth.dev/hypernet/interactive/pkg/internal"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"github.com/fatih/color"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/grpc"
@@ -67,6 +68,7 @@ func main() {
 	// Configure timed tasks
 	quartz := cron.New(cron.WithLogger(cron.VerbosePrintfLogger(&log.Logger)))
 	quartz.AddFunc("@every 60m", services.DoAutoDatabaseCleanup)
+	quartz.AddFunc("@every 1m", services.FlushPostViews)
 	quartz.Start()
 
 	// Initialize cache

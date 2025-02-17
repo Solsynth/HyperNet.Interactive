@@ -28,7 +28,12 @@ func listPinnedPost(c *fiber.Ctx) error {
 	tx = tx.Where("publisher_id = ?", user.ID)
 	tx = tx.Where("pinned_at IS NOT NULL")
 
-	items, err := services.ListPost(tx, 100, 0, "published_at DESC")
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
+	items, err := services.ListPost(tx, 100, 0, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

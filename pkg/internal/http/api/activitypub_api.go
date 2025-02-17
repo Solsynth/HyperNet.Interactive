@@ -2,13 +2,14 @@ package api
 
 import (
 	"fmt"
+	"time"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
-	"time"
 )
 
 func apGetPublisher(c *fiber.Ctx) error {
@@ -42,7 +43,7 @@ func apGetPost(c *fiber.Ctx) error {
 		return err
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC")
+	items, err := services.ListPost(tx, take, offset, "published_at DESC", nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
