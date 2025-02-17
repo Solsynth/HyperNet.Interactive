@@ -14,6 +14,7 @@ var AutoMaintainRange = []any{
 	&models.Subscription{},
 	&models.Poll{},
 	&models.PollAnswer{},
+	&models.PostFlag{},
 }
 
 func RunMigration(source *gorm.DB) error {

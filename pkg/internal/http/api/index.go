@@ -62,6 +62,7 @@ func MapAPIs(app *fiber.App, baseURL string) {
 			posts.Get("/drafts", listDraftPost)
 			posts.Get("/:postId", getPost)
 			posts.Get("/:postId/insight", getPostInsight)
+			posts.Get("/:postId/flag", createFlag)
 			posts.Post("/:postId/react", reactPost)
 			posts.Post("/:postId/pin", pinPost)
 			posts.Delete("/:postId", deletePost)

@@ -38,6 +38,7 @@ type Post struct {
 	Categories  []Category        `json:"categories" gorm:"many2many:post_categories"`
 	Reactions   []Reaction        `json:"reactions"`
 	Replies     []Post            `json:"replies" gorm:"foreignKey:ReplyID"`
+	Flags       []PostFlag        `json:"flags" gorm:"foreignKey:PostID"`
 	ReplyID     *uint             `json:"reply_id"`
 	RepostID    *uint             `json:"repost_id"`
 	ReplyTo     *Post             `json:"reply_to" gorm:"foreignKey:ReplyID"`
