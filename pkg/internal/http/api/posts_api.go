@@ -32,6 +32,9 @@ func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 	if c.QueryBool("noReply", true) {
 		tx = services.FilterPostReply(tx)
 	}
+	if c.QueryBool("noCollapse", true) {
+		tx = tx.Where("is_collapsed = ?", false)
+	}
 
 	if len(c.Query("author")) > 0 {
 		var author models.Publisher
