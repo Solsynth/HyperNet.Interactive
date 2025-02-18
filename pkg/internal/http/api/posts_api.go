@@ -20,7 +20,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
+func UniversalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 	tx = services.FilterPostDraft(tx)
 
 	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
@@ -33,7 +33,7 @@ func universalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 		tx = services.FilterPostReply(tx)
 	}
 	if c.QueryBool("noCollapse", true) {
-		tx = tx.Where("is_collapsed = ?", false)
+		tx = tx.Where("is_collapsed = ? OR is_collapsed IS NULL", false)
 	}
 
 	if len(c.Query("author")) > 0 {
@@ -114,7 +114,7 @@ func searchPost(c *fiber.Ctx) error {
 	tx = services.FilterPostWithFuzzySearch(tx, probe)
 
 	var err error
-	if tx, err = universalPostFilter(c, tx); err != nil {
+	if tx, err = UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func listPost(c *fiber.Ctx) error {
 	tx := database.C
 
 	var err error
-	if tx, err = universalPostFilter(c, tx); err != nil {
+	if tx, err = UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 
@@ -196,7 +196,7 @@ func listPostMinimal(c *fiber.Ctx) error {
 	tx := database.C
 
 	var err error
-	if tx, err = universalPostFilter(c, tx); err != nil {
+	if tx, err = UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 

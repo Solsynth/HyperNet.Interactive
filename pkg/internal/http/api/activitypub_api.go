@@ -39,7 +39,7 @@ func apGetPost(c *fiber.Ctx) error {
 	tx := database.C
 
 	var err error
-	if tx, err = universalPostFilter(c, tx); err != nil {
+	if tx, err = UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 
