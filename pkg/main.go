@@ -68,7 +68,7 @@ func main() {
 	// Configure timed tasks
 	quartz := cron.New(cron.WithLogger(cron.VerbosePrintfLogger(&log.Logger)))
 	quartz.AddFunc("@every 60m", services.DoAutoDatabaseCleanup)
-	quartz.AddFunc("@every 1m", services.FlushPostViews)
+	quartz.AddFunc("@every 5m", services.FlushPostViews)
 	quartz.Start()
 
 	// Initialize cache
