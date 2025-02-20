@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	pproto "git.solsynth.dev/hypernet/paperclip/pkg/proto"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
+	aproto "git.solsynth.dev/hypernet/passport/pkg/proto"
 	"github.com/eko/gocache/lib/v4/cache"
 	"github.com/eko/gocache/lib/v4/marshaler"
 	"github.com/eko/gocache/lib/v4/store"
@@ -29,7 +31,7 @@ import (
 
 func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	if user == nil {
-		return tx.Where("visibility = ?", models.PostVisibilityAll)
+		return tx.Where("visibility = ? AND realm_id IS NULL", models.PostVisibilityAll)
 	}
 
 	const (
@@ -40,15 +42,16 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	)
 
 	type userContextState struct {
-		Allowlist     []uint
-		InvisibleList []uint
+		Allowlist     []uint `json:"allow"`
+		InvisibleList []uint `json:"invisible"`
+		RealmList     []uint `json:"realm"`
 	}
 
 	cacheManager := cache.New[any](localCache.S)
 	marshal := marshaler.New(cacheManager)
 	ctx := context.Background()
 
-	var allowlist, invisibleList []uint
+	var allowlist, invisibleList, realmList []uint
 
 	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
 	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
@@ -56,10 +59,31 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		state := statusCache.(*userContextState)
 		allowlist = state.Allowlist
 		invisibleList = state.InvisibleList
+		realmList = state.RealmList
 	} else {
+		// Getting the relationships
 		userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
 		userGotBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
 		userBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), false)
+
+		// Getting the realm list
+		{
+			conn, err := gap.Nx.GetClientGrpcConn(nex.ServiceTypeAuth)
+			if err != nil {
+				ac := aproto.NewRealmServiceClient(conn)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+				defer cancel()
+				resp, err := ac.ListAvailableRealm(ctx, &aproto.LookupUserRealmRequest{
+					UserId: uint64(user.ID),
+				})
+				if err == nil {
+					realmList = lo.Map(resp.GetData(), func(item *aproto.RealmInfo, index int) uint {
+						return uint(item.GetId())
+					})
+				}
+			}
+		}
+
 		userFriendList := lo.Map(userFriends, func(item *proto.UserInfo, index int) uint {
 			return uint(item.GetId())
 		})
@@ -101,6 +125,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 			userContextState{
 				Allowlist:     allowlist,
 				InvisibleList: invisibleList,
+				RealmList:     realmList,
 			},
 			store.WithExpiration(5*time.Minute),
 			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
@@ -124,6 +149,11 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 
 	if len(invisibleList) > 0 {
 		tx = tx.Where("publisher_id NOT IN ?", invisibleList)
+	}
+	if len(realmList) > 0 {
+		tx = tx.Where("realm_id IN ?", realmList)
+	} else {
+		tx = tx.Where("realm_id IS NULL")
 	}
 
 	return tx
