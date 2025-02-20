@@ -55,6 +55,10 @@ func UniversalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
 		tx = services.FilterPostWithType(tx, c.Query("type"))
 	}
 
+	if len(c.Query("realm")) > 0 {
+		tx = services.FilterPostWithRealm(tx, c.Query("realm"))
+	}
+
 	return tx, nil
 }
 

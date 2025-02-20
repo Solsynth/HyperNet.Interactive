@@ -159,6 +159,19 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	return tx
 }
 
+func FilterPostWithRealm(tx *gorm.DB, probe string) *gorm.DB {
+	if numericId, err := strconv.Atoi(probe); err == nil {
+		return tx.Where("realm_id = ?", uint(numericId))
+	}
+
+	realm, err := authkit.GetRealmByAlias(gap.Nx, probe)
+	if err != nil {
+		return tx
+	}
+
+	return tx.Where("realm_id = ?", realm.ID)
+}
+
 func FilterPostWithCategory(tx *gorm.DB, alias string) *gorm.DB {
 	aliases := strings.Split(alias, ",")
 	return tx.Joins("JOIN post_categories ON posts.id = post_categories.post_id").
