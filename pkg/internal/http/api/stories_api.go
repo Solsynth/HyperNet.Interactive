@@ -45,6 +45,7 @@ func createStory(c *fiber.Ctx) error {
 		ReplyTo        *uint             `json:"reply_to"`
 		RepostTo       *uint             `json:"repost_to"`
 		Poll           *uint             `json:"poll"`
+		Realm          *uint             `json:"realm"`
 	}
 
 	if err := exts.BindAndValidate(c, &data); err != nil {
@@ -94,6 +95,13 @@ func createStory(c *fiber.Ctx) error {
 		item.Visibility = *data.Visibility
 	} else {
 		item.Visibility = models.PostVisibilityAll
+	}
+
+	if data.Realm != nil {
+		if _, err := authkit.GetRealmMember(gap.Nx, *data.Realm, user.ID); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("you are not a member of realm #%d", *data.Realm))
+		}
+		item.RealmID = data.Realm
 	}
 
 	if data.ReplyTo != nil {

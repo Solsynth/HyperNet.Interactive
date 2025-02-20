@@ -43,6 +43,7 @@ func createQuestion(c *fiber.Ctx) error {
 		InvisibleUsers []uint            `json:"invisible_users_list"`
 		Visibility     *int8             `json:"visibility"`
 		IsDraft        bool              `json:"is_draft"`
+		Realm          *uint             `json:"realm"`
 		Reward         float64           `json:"reward"`
 	}
 
@@ -107,6 +108,13 @@ func createQuestion(c *fiber.Ctx) error {
 
 	if item.PublishedAt == nil {
 		item.PublishedAt = lo.ToPtr(time.Now())
+	}
+
+	if data.Realm != nil {
+		if _, err := authkit.GetRealmMember(gap.Nx, *data.Realm, user.ID); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("you are not a member of realm #%d", *data.Realm))
+		}
+		item.RealmID = data.Realm
 	}
 
 	if data.Visibility != nil {
