@@ -173,8 +173,8 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 			"(visibility = ? AND publisher_id IN ?) OR "+
 			"(visibility = ? AND ?) OR "+
 			"(visibility = ? AND NOT ?))",
-		AllVisibility,
 		self,
+		AllVisibility,
 		FriendsVisibility,
 		allowlist,
 		SelectedVisibility,
