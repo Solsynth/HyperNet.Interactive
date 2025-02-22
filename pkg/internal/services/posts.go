@@ -166,6 +166,7 @@ func FilterPostWithRealm(tx *gorm.DB, probe string) *gorm.DB {
 
 	realm, err := authkit.GetRealmByAlias(gap.Nx, probe)
 	if err != nil {
+		log.Warn().Msgf("Failed to find realm with alias %s: %s", probe, err)
 		return tx
 	}
 
