@@ -168,20 +168,47 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 		)
 	}
 
-	tx = tx.Where(
-		"(publisher_id IN ? OR visibility = ? "+
-			"(visibility = ? AND publisher_id IN ?) OR "+
-			"(visibility = ? AND ?) OR "+
-			"(visibility = ? AND NOT ?))",
-		self,
-		AllVisibility,
-		FriendsVisibility,
-		allowlist,
-		SelectedVisibility,
-		datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
-		FilteredVisibility,
-		datatypes.JSONQuery("invisible_users").HasKey(strconv.Itoa(int(user.ID))),
-	)
+	if len(self) == 0 && len(allowlist) == 0 {
+		tx = tx.Where(
+			"(visibility = ? OR"+
+				"(visibility = ? AND ?) OR "+
+				"(visibility = ? AND NOT ?))",
+			AllVisibility,
+			SelectedVisibility,
+			datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
+			FilteredVisibility,
+			datatypes.JSONQuery("invisible_users").HasKey(strconv.Itoa(int(user.ID))),
+		)
+	} else if len(self) == 0 {
+		tx = tx.Where(
+			"(visibility = ? OR"+
+				"(visibility = ? AND publisher_id IN ?) OR "+
+				"(visibility = ? AND ?) OR "+
+				"(visibility = ? AND NOT ?))",
+			AllVisibility,
+			FriendsVisibility,
+			allowlist,
+			SelectedVisibility,
+			datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
+			FilteredVisibility,
+			datatypes.JSONQuery("invisible_users").HasKey(strconv.Itoa(int(user.ID))),
+		)
+	} else {
+		tx = tx.Where(
+			"(publisher_id IN ? OR visibility = ? OR"+
+				"(visibility = ? AND publisher_id IN ?) OR "+
+				"(visibility = ? AND ?) OR "+
+				"(visibility = ? AND NOT ?))",
+			self,
+			AllVisibility,
+			FriendsVisibility,
+			allowlist,
+			SelectedVisibility,
+			datatypes.JSONQuery("visible_users").HasKey(strconv.Itoa(int(user.ID))),
+			FilteredVisibility,
+			datatypes.JSONQuery("invisible_users").HasKey(strconv.Itoa(int(user.ID))),
+		)
+	}
 
 	if len(invisibleList) > 0 {
 		tx = tx.Where("publisher_id NOT IN ?", invisibleList)
