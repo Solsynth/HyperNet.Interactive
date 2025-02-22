@@ -26,9 +26,9 @@ func getPostInsight(c *fiber.Ctx) error {
 	tx := services.FilterPostDraft(database.C)
 
 	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
-		tx = services.FilterPostWithUserContext(tx, &user, len(c.Query("realm")) > 0)
+		tx = services.FilterPostWithUserContext(c, tx, &user)
 	} else {
-		tx = services.FilterPostWithUserContext(tx, nil, len(c.Query("realm")) > 0)
+		tx = services.FilterPostWithUserContext(c, tx, nil)
 	}
 
 	if numericId, paramErr := strconv.Atoi(id); paramErr == nil {

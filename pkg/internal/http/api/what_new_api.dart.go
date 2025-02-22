@@ -20,7 +20,7 @@ func getWhatsNew(c *fiber.Ctx) error {
 	}
 
 	tx := services.FilterPostDraft(database.C)
-	tx = services.FilterPostWithUserContext(tx, &user, len(c.Query("realm")) > 0)
+	tx = services.FilterPostWithUserContext(c, tx, &user)
 
 	tx = tx.Where("id > ?", pivot)
 

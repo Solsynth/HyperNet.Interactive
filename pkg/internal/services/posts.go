@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex"
+	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -29,7 +30,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool) *gorm.DB {
+func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *gorm.DB {
 	if user == nil {
 		return tx.Where("visibility = ? AND realm_id IS NULL", models.PostVisibilityAll)
 	}
@@ -44,6 +45,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 	type userContextState struct {
 		Allowlist     []uint `json:"allow"`
 		InvisibleList []uint `json:"invisible"`
+		FollowList    []uint `json:"follow"`
 		RealmList     []uint `json:"realm"`
 	}
 
@@ -51,7 +53,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 	marshal := marshaler.New(cacheManager)
 	ctx := context.Background()
 
-	var allowlist, invisibleList, realmList []uint
+	var allowlist, invisibleList, followList, realmList []uint
 
 	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
 	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
@@ -59,6 +61,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 		state := statusCache.(*userContextState)
 		allowlist = state.Allowlist
 		invisibleList = state.InvisibleList
+		followList = state.FollowList
 		realmList = state.RealmList
 	} else {
 		// Getting the relationships
@@ -106,6 +109,19 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 			models.PublisherTypePersonal,
 		).Find(&publishers)
 
+		// Getting the follow list
+		{
+			var subs []models.Subscription
+			if err := database.C.Where("follower_id = ? AND account_id IS NOT NULL", user.ID).Find(&subs).Error; err != nil {
+				log.Error().Err(err).Msg("An error occurred when getting subscriptions...")
+			}
+			followList = lo.Map(lo.Filter(subs, func(item models.Subscription, index int) bool {
+				return item.AccountID != nil
+			}), func(item models.Subscription, index int) uint {
+				return *item.AccountID
+			})
+		}
+
 		allowlist = lo.Map(lo.Filter(publishers, func(item models.Publisher, index int) bool {
 			if item.AccountID == nil {
 				return false
@@ -130,6 +146,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 				Allowlist:     allowlist,
 				InvisibleList: invisibleList,
 				RealmList:     realmList,
+				FollowList:    followList,
 			},
 			store.WithExpiration(2*time.Minute),
 			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
@@ -154,12 +171,19 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 	if len(invisibleList) > 0 {
 		tx = tx.Where("publisher_id NOT IN ?", invisibleList)
 	}
-	if !withRealm {
+	if len(c.Query("realm")) == 0 {
 		if len(realmList) > 0 {
 			tx = tx.Where("realm_id IN ? OR realm_id IS NULL", realmList)
 		} else {
 			tx = tx.Where("realm_id IS NULL")
 		}
+	}
+
+	switch c.Query("channel") {
+	case "friends":
+		tx = tx.Where("publisher_id IN ?", allowlist)
+	case "following":
+		tx = tx.Where("publisher_id IN ?", followList)
 	}
 
 	return tx
