@@ -29,7 +29,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
+func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool) *gorm.DB {
 	if user == nil {
 		return tx.Where("visibility = ? AND realm_id IS NULL", models.PostVisibilityAll)
 	}
@@ -69,7 +69,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 		// Getting the realm list
 		{
 			conn, err := gap.Nx.GetClientGrpcConn(nex.ServiceTypeAuth)
-			if err != nil {
+			if err == nil {
 				ac := aproto.NewRealmServiceClient(conn)
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
@@ -80,7 +80,11 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 					realmList = lo.Map(resp.GetData(), func(item *aproto.RealmInfo, index int) uint {
 						return uint(item.GetId())
 					})
+				} else {
+					log.Warn().Err(err).Uint("user", user.ID).Msg("An error occurred when getting realm list from grpc...")
 				}
+			} else {
+				log.Warn().Err(err).Uint("user", user.ID).Msg("An error occurred when getting grpc connection to Auth...")
 			}
 		}
 
@@ -127,7 +131,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 				InvisibleList: invisibleList,
 				RealmList:     realmList,
 			},
-			store.WithExpiration(5*time.Minute),
+			store.WithExpiration(2*time.Minute),
 			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
 		)
 	}
@@ -150,10 +154,12 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account) *gorm.DB {
 	if len(invisibleList) > 0 {
 		tx = tx.Where("publisher_id NOT IN ?", invisibleList)
 	}
-	if len(realmList) > 0 {
-		tx = tx.Where("realm_id IN ?", realmList)
-	} else {
-		tx = tx.Where("realm_id IS NULL")
+	if !withRealm {
+		if len(realmList) > 0 {
+			tx = tx.Where("realm_id IN ?", realmList)
+		} else {
+			tx = tx.Where("realm_id IS NULL")
+		}
 	}
 
 	return tx
