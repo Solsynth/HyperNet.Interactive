@@ -156,7 +156,7 @@ func FilterPostWithUserContext(tx *gorm.DB, user *authm.Account, withRealm bool)
 	}
 	if !withRealm {
 		if len(realmList) > 0 {
-			tx = tx.Where("realm_id IN ?", realmList)
+			tx = tx.Where("realm_id IN ? OR realm_id IS NULL", realmList)
 		} else {
 			tx = tx.Where("realm_id IS NULL")
 		}
