@@ -36,13 +36,14 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 	}
 
 	const (
+		AllVisibility      = models.PostVisibilityAll
 		FriendsVisibility  = models.PostVisibilityFriends
 		SelectedVisibility = models.PostVisibilitySelected
 		FilteredVisibility = models.PostVisibilityFiltered
 	)
 
 	type userContextState struct {
-		Self          uint   `json:"self"`
+		Self          []uint `json:"self"`
 		Allowlist     []uint `json:"allow"`
 		InvisibleList []uint `json:"invisible"`
 		FollowList    []uint `json:"follow"`
@@ -53,8 +54,7 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 	marshal := marshaler.New(cacheManager)
 	ctx := context.Background()
 
-	var allowlist, invisibleList, followList, realmList []uint
-	var self uint
+	var self, allowlist, invisibleList, followList, realmList []uint
 
 	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
 	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
@@ -67,12 +67,16 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 		self = state.Self
 	} else {
 		// Get itself
-		var publisher models.Publisher
-		if err := database.C.Where("account_id = ?", user.ID).First(&publisher).Error; err != nil {
-			return tx
+		{
+			var publishers []models.Publisher
+			if err := database.C.Where("account_id = ?", user.ID).Find(&publishers).Error; err != nil {
+				return tx
+			}
+			self = lo.Map(publishers, func(item models.Publisher, index int) uint {
+				return item.ID
+			})
+			allowlist = append(allowlist, self...)
 		}
-		allowlist = append(allowlist, publisher.ID)
-		self = publisher.ID
 
 		// Getting the relationships
 		userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
@@ -165,10 +169,11 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 	}
 
 	tx = tx.Where(
-		"publisher_id = ? OR "+
+		"(publisher_id IN ? OR visibility = ? "+
 			"(visibility = ? AND publisher_id IN ?) OR "+
 			"(visibility = ? AND ?) OR "+
-			"(visibility = ? AND NOT ?)",
+			"(visibility = ? AND NOT ?))",
+		AllVisibility,
 		self,
 		FriendsVisibility,
 		allowlist,
