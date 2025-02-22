@@ -68,7 +68,7 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 	} else {
 		// Get itself
 		var publisher models.Publisher
-		if err := database.C.Where("id = ?", user.ID).First(&publisher).Error; err != nil {
+		if err := database.C.Where("account_id = ?", user.ID).First(&publisher).Error; err != nil {
 			return tx
 		}
 		allowlist = append(allowlist, publisher.ID)
