@@ -39,10 +39,10 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 		FriendsVisibility  = models.PostVisibilityFriends
 		SelectedVisibility = models.PostVisibilitySelected
 		FilteredVisibility = models.PostVisibilityFiltered
-		NoneVisibility     = models.PostVisibilityNone
 	)
 
 	type userContextState struct {
+		Self          uint   `json:"self"`
 		Allowlist     []uint `json:"allow"`
 		InvisibleList []uint `json:"invisible"`
 		FollowList    []uint `json:"follow"`
@@ -54,6 +54,7 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 	ctx := context.Background()
 
 	var allowlist, invisibleList, followList, realmList []uint
+	var self uint
 
 	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
 	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
@@ -63,7 +64,16 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 		invisibleList = state.InvisibleList
 		followList = state.FollowList
 		realmList = state.RealmList
+		self = state.Self
 	} else {
+		// Get itself
+		var publisher models.Publisher
+		if err := database.C.Where("id = ?", user.ID).First(&publisher).Error; err != nil {
+			return tx
+		}
+		allowlist = append(allowlist, publisher.ID)
+		self = publisher.ID
+
 		// Getting the relationships
 		userFriends, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipFriend), true)
 		userGotBlocked, _ := authkit.ListRelative(gap.Nx, user.ID, int32(authm.RelationshipBlocked), true)
@@ -147,6 +157,7 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 				InvisibleList: invisibleList,
 				RealmList:     realmList,
 				FollowList:    followList,
+				Self:          self,
 			},
 			store.WithExpiration(2*time.Minute),
 			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
@@ -158,7 +169,7 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 			"(visibility = ? AND publisher_id IN ?) OR "+
 			"(visibility = ? AND ?) OR "+
 			"(visibility = ? AND NOT ?)",
-		user.ID,
+		self,
 		FriendsVisibility,
 		allowlist,
 		SelectedVisibility,
@@ -253,9 +264,15 @@ func FilterPostWithFuzzySearch(tx *gorm.DB, probe string) *gorm.DB {
 
 	probe = "%" + probe + "%"
 	return tx.
-		Where("? AND body->>'content' ILIKE ?", gorm.Expr("body ? 'content'"), probe).
-		Or("? AND body->>'title' ILIKE ?", gorm.Expr("body ? 'title'"), probe).
-		Or("? AND body->>'description' ILIKE ?", gorm.Expr("body ? 'description'"), probe)
+		Where(
+			"(? AND body->>'content' ILIKE ? OR ? AND body->>'title' ILIKE ? OR ? AND body->>'description' ILIKE ?)",
+			gorm.Expr("body ? 'content'"),
+			probe,
+			gorm.Expr("body ? 'title'"),
+			probe,
+			gorm.Expr("body ? 'description'"),
+			probe,
+		)
 }
 
 func PreloadGeneral(tx *gorm.DB) *gorm.DB {
