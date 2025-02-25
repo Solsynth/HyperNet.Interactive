@@ -175,11 +175,16 @@ func NotifyUserSubscription(poster models.Publisher, item models.Post, content s
 		})
 	}
 
+	metadata := map[string]any{
+		"related_post": TruncatePostContent(item),
+	}
+
 	err := authkit.NotifyUserBatch(gap.Nx, userIDs, pushkit.Notification{
 		Topic:    "interactive.subscription",
 		Title:    nTitle,
 		Subtitle: nSubtitle,
 		Body:     body,
+		Metadata: metadata,
 		Priority: 3,
 	})
 
