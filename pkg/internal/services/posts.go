@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.solsynth.dev/hypernet/nexus/pkg/nex"
-	"github.com/gofiber/fiber/v2"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"git.solsynth.dev/hypernet/nexus/pkg/nex"
+	"github.com/gofiber/fiber/v2"
 
 	localCache "git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -675,7 +676,8 @@ func updatePostAttachmentVisibility(item models.Post) error {
 }
 
 func DeletePost(item models.Post) error {
-	if err := database.C.Delete(&item).Error; err != nil {
+	copiedItem := item
+	if err := database.C.Delete(&copiedItem).Error; err != nil {
 		return err
 	}
 
