@@ -35,22 +35,22 @@ func FlushPostViews() {
 	workingQueue := make([]models.PostView, len(postViewQueue))
 	copy(workingQueue, postViewQueue)
 	clear(postViewQueue)
-	updateRequiredPost := make(map[uint]bool)
+	updateRequiredPost := make(map[uint]int)
 	for _, item := range workingQueue {
-		updateRequiredPost[item.PostID] = true
+		updateRequiredPost[item.PostID]++
 	}
 	workingQueue = lo.UniqBy(workingQueue, func(item models.PostView) string {
 		return fmt.Sprintf("%d:%d", item.PostID, item.AccountID)
 	})
 	_ = database.C.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(workingQueue, 1000).Error
-	for k := range updateRequiredPost {
+	for k, v := range updateRequiredPost {
 		var count int64
 		if err := database.C.Model(&models.PostView{}).Where("post_id = ?", k).Count(&count).Error; err != nil {
 			continue
 		}
 		database.C.Model(&models.Post{}).Where("id = ?", k).Updates(map[string]any{
 			"total_views":            count,
-			"total_aggressive_views": gorm.Expr("total_aggressive_views + ?", count),
+			"total_aggressive_views": gorm.Expr("total_aggressive_views + ?", v),
 		})
 	}
 }
