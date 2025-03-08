@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
@@ -20,23 +21,39 @@ import (
 	"github.com/samber/lo"
 )
 
-func UniversalPostFilter(c *fiber.Ctx, tx *gorm.DB) (*gorm.DB, error) {
+type UniversalPostFilterConfig struct {
+	ShowDraft     bool
+	ShowReply     bool
+	ShowCollapsed bool
+}
+
+func UniversalPostFilter(c *fiber.Ctx, tx *gorm.DB, cfg ...UniversalPostFilterConfig) (*gorm.DB, error) {
+	var config UniversalPostFilterConfig
+	if len(cfg) > 0 {
+		config = cfg[0]
+	} else {
+		config = UniversalPostFilterConfig{}
+	}
+
 	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
 		tx = services.FilterPostWithUserContext(c, tx, &user)
-		if c.QueryBool("noDraft", true) {
+		if c.QueryBool("noDraft", true) && !config.ShowDraft {
 			tx = services.FilterPostDraft(tx)
+			tx = services.FilterPostWithPublishedAt(tx, time.Now())
 		} else {
 			tx = services.FilterPostDraftWithAuthor(database.C, user.ID)
+			tx = services.FilterPostWithPublishedAt(tx, time.Now(), user.ID)
 		}
 	} else {
 		tx = services.FilterPostWithUserContext(c, tx, nil)
 		tx = services.FilterPostDraft(tx)
+		tx = services.FilterPostWithPublishedAt(tx, time.Now())
 	}
 
-	if c.QueryBool("noReply", true) {
+	if c.QueryBool("noReply", true) && !config.ShowReply {
 		tx = services.FilterPostReply(tx)
 	}
-	if c.QueryBool("noCollapse", true) {
+	if c.QueryBool("noCollapse", true) && !config.ShowCollapsed {
 		tx = tx.Where("is_collapsed = ? OR is_collapsed IS NULL", false)
 	}
 
@@ -74,7 +91,10 @@ func getPost(c *fiber.Ctx) error {
 
 	tx := database.C
 
-	if tx, err = UniversalPostFilter(c, tx); err != nil {
+	if tx, err = UniversalPostFilter(c, tx, UniversalPostFilterConfig{
+		ShowReply: true,
+		ShowDraft: true,
+	}); err != nil {
 		return err
 	}
 
@@ -120,7 +140,9 @@ func searchPost(c *fiber.Ctx) error {
 	tx = services.FilterPostWithFuzzySearch(tx, probe)
 
 	var err error
-	if tx, err = UniversalPostFilter(c, tx); err != nil {
+	if tx, err = UniversalPostFilter(c, tx, UniversalPostFilterConfig{
+		ShowReply: true,
+	}); err != nil {
 		return err
 	}
 

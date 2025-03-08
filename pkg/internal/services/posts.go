@@ -276,14 +276,30 @@ func FilterPostReply(tx *gorm.DB, replyTo ...uint) *gorm.DB {
 	}
 }
 
-func FilterPostWithPublishedAt(tx *gorm.DB, date time.Time) *gorm.DB {
+func FilterPostWithPublishedAt(tx *gorm.DB, date time.Time, uid ...uint) *gorm.DB {
+	var publishers []models.Publisher
+	if len(uid) > 0 {
+		if err := database.C.Where("account_id = ?", uid[0]).Find(&publishers).Error; err == nil {
+		}
+	}
+
 	return tx.
-		Where("(published_at >= ? OR published_at IS NULL)", date).
-		Where("(published_until < ? OR published_until IS NULL)", date)
+		Where("(published_at < ? OR published_at IS NULL)", date).
+		Where("(published_until >= ? OR published_until IS NULL)", date)
 }
 
 func FilterPostWithAuthorDraft(tx *gorm.DB, uid uint) *gorm.DB {
-	return tx.Where("publisher_id = ? AND is_draft = ?", uid, true)
+	var publishers []models.Publisher
+	if err := database.C.Where("account_id = ?", uid).Find(&publishers).Error; err != nil {
+		return FilterPostDraft(tx)
+	}
+	if len(publishers) == 0 {
+		return FilterPostDraft(tx)
+	}
+	idSet := lo.Map(publishers, func(item models.Publisher, index int) uint {
+		return item.ID
+	})
+	return tx.Where("publisher_id IN ? AND is_draft = ?", idSet, true)
 }
 
 func FilterPostDraft(tx *gorm.DB) *gorm.DB {
@@ -337,11 +353,7 @@ func PreloadGeneral(tx *gorm.DB) *gorm.DB {
 		Preload("RepostTo.Categories")
 }
 
-func GetPost(tx *gorm.DB, id uint, ignoreLimitation ...bool) (models.Post, error) {
-	if len(ignoreLimitation) == 0 || !ignoreLimitation[0] {
-		tx = FilterPostWithPublishedAt(tx, time.Now())
-	}
-
+func GetPost(tx *gorm.DB, id uint) (models.Post, error) {
 	var item models.Post
 	if err := PreloadGeneral(tx).
 		Where("id = ?", id).
@@ -352,11 +364,7 @@ func GetPost(tx *gorm.DB, id uint, ignoreLimitation ...bool) (models.Post, error
 	return item, nil
 }
 
-func GetPostByAlias(tx *gorm.DB, alias, area string, ignoreLimitation ...bool) (models.Post, error) {
-	if len(ignoreLimitation) == 0 || !ignoreLimitation[0] {
-		tx = FilterPostWithPublishedAt(tx, time.Now())
-	}
-
+func GetPostByAlias(tx *gorm.DB, alias, area string) (models.Post, error) {
 	var item models.Post
 	if err := PreloadGeneral(tx).
 		Where("alias = ?", alias).
