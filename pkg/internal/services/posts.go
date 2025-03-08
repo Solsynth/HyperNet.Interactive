@@ -290,6 +290,20 @@ func FilterPostDraft(tx *gorm.DB) *gorm.DB {
 	return tx.Where("is_draft = ? OR is_draft IS NULL", false)
 }
 
+func FilterPostDraftWithAuthor(tx *gorm.DB, uid uint) *gorm.DB {
+	var publishers []models.Publisher
+	if err := database.C.Where("account_id = ?", uid).Find(&publishers).Error; err != nil {
+		return FilterPostDraft(tx)
+	}
+	if len(publishers) == 0 {
+		return FilterPostDraft(tx)
+	}
+	idSet := lo.Map(publishers, func(item models.Publisher, index int) uint {
+		return item.ID
+	})
+	return tx.Where("(is_draft = ? OR is_draft IS NULL) OR publisher_id IN ?", false, idSet)
+}
+
 func FilterPostWithFuzzySearch(tx *gorm.DB, probe string) *gorm.DB {
 	if len(probe) == 0 {
 		return tx

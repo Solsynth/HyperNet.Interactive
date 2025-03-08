@@ -68,7 +68,13 @@ func getPost(c *fiber.Ctx) error {
 	var item models.Post
 	var err error
 
-	tx := services.FilterPostDraft(database.C)
+	tx := database.C
+
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		tx = services.FilterPostDraftWithAuthor(database.C, user.ID)
+	} else {
+		tx = services.FilterPostDraft(database.C)
+	}
 
 	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
 		tx = services.FilterPostWithUserContext(c, tx, &user)
