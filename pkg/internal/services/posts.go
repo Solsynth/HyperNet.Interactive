@@ -278,8 +278,8 @@ func FilterPostReply(tx *gorm.DB, replyTo ...uint) *gorm.DB {
 
 func FilterPostWithPublishedAt(tx *gorm.DB, date time.Time) *gorm.DB {
 	return tx.
-		Where("published_at <= ? OR published_at IS NULL", date).
-		Where("published_until > ? OR published_until IS NULL", date)
+		Where("(published_at >= ? OR published_at IS NULL)", date).
+		Where("(published_until < ? OR published_until IS NULL)", date)
 }
 
 func FilterPostWithAuthorDraft(tx *gorm.DB, uid uint) *gorm.DB {
@@ -615,6 +615,9 @@ func EditPost(item models.Post) (models.Post, error) {
 		return item, fmt.Errorf("prevented from editing post with truncated content")
 	}
 
+	if !item.IsDraft && item.PublishedAt == nil {
+		item.PublishedAt = lo.ToPtr(time.Now())
+	}
 	if item.Alias != nil && len(*item.Alias) == 0 {
 		item.Alias = nil
 	}
