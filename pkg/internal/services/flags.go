@@ -9,7 +9,7 @@ import (
 
 func NewFlag(post models.Post, account uint) (models.PostFlag, error) {
 	var flag models.PostFlag
-	if err := database.C.Where("post_id = ? AND account_id = ?", post.ID, account).Error; err == nil {
+	if err := database.C.Where("post_id = ? AND account_id = ?", post.ID, account).First(&flag).Error; err == nil {
 		return flag, fmt.Errorf("flag already exists")
 	}
 	flag = models.PostFlag{
