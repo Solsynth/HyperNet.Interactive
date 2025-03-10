@@ -667,7 +667,10 @@ func EditPost(item models.Post, og models.Post) (models.Post, error) {
 func updatePostAttachmentMeta(item models.Post, old ...models.Post) error {
 	log.Debug().Any("attachments", item.Body["attachments"]).Msg("Updating post attachments meta...")
 
-	sameAsOld := reflect.DeepEqual(old[0].Body, item.Body)
+	sameAsOld := false
+	if len(old) > 0 {
+		sameAsOld = reflect.DeepEqual(old[0].Body, item.Body)
+	}
 	if len(old) > 0 && !sameAsOld {
 		val, _ := old[0].Body["attachments"].([]string)
 		if dat, ok := item.Body["thumbnail"].(string); ok {
