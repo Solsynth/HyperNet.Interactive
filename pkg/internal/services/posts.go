@@ -719,14 +719,41 @@ func DeletePost(item models.Post) error {
 
 		pc := pproto.NewAttachmentServiceClient(conn)
 		_, err = pc.DeleteAttachment(context.Background(), &pproto.DeleteAttachmentRequest{
-			Rid: lo.Map(val, func(item string, _ int) string {
-				return item
-			}),
+			Rid:    lo.Uniq(val),
 			UserId: lo.ToPtr(uint64(*item.Publisher.AccountID)),
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("An error occurred when deleting post attachment...")
 		}
+	}
+
+	return nil
+}
+
+func DeletePostInBatch(items []models.Post) error {
+	if err := database.C.Delete(&items).Error; err != nil {
+		return err
+	}
+
+	var attachments []string
+	for _, item := range items {
+		if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
+			attachments = append(attachments, val...)
+		}
+	}
+
+	conn, err := gap.Nx.GetClientGrpcConn("uc")
+	if err != nil {
+		return nil
+	}
+
+	pc := pproto.NewAttachmentServiceClient(conn)
+	_, err = pc.DeleteAttachment(context.Background(), &pproto.DeleteAttachmentRequest{
+		Rid: lo.Uniq(attachments),
+		// FIXME Some issues here, if the user linked others uploaded attachment, it will be deleted
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("An error occurred when deleting post attachment...")
 	}
 
 	return nil
