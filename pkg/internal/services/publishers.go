@@ -139,5 +139,22 @@ func DeletePublisher(publisher models.Publisher) error {
 		return err
 	}
 
-	return tx.Commit().Error
+	err := tx.Commit().Error
+	if err == nil {
+		var attachments []string
+		if len(publisher.Avatar) > 0 {
+			attachments = append(attachments, publisher.Avatar)
+		}
+		if len(publisher.Banner) > 0 {
+			attachments = append(attachments, publisher.Banner)
+		}
+		if len(attachments) > 0 {
+			filekit.CountAttachmentUsage(gap.Nx, &proto.UpdateUsageRequest{
+				Rid:   attachments,
+				Delta: -1,
+			})
+		}
+	}
+
+	return err
 }
