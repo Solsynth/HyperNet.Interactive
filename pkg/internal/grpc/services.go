@@ -29,7 +29,7 @@ func (v *App) BroadcastEvent(ctx context.Context, in *proto.EventInfo) (*proto.E
 			for _, model := range database.AutoMaintainRange {
 				switch model.(type) {
 				default:
-					tx.Delete(model, "account_id = ?", data)
+					tx.Delete(model, "account_id = ?", data.ID)
 				}
 			}
 			tx.Commit()
