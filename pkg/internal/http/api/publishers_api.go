@@ -191,6 +191,7 @@ func editPublisher(c *fiber.Ctx) error {
 		return err
 	}
 
+	og := publisher
 	publisher.Name = data.Name
 	publisher.Nick = data.Nick
 	publisher.Description = data.Description
@@ -200,7 +201,7 @@ func editPublisher(c *fiber.Ctx) error {
 		publisher.AccountID = data.AccountID
 	}
 
-	if publisher, err = services.EditPublisher(user, publisher); err != nil {
+	if publisher, err = services.EditPublisher(user, publisher, og); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 

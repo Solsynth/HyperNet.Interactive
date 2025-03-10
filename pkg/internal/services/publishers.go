@@ -2,8 +2,12 @@ package services
 
 import (
 	"fmt"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/paperclip/pkg/filekit"
+	"git.solsynth.dev/hypernet/paperclip/pkg/proto"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 )
 
@@ -33,11 +37,21 @@ func CreatePersonalPublisher(user authm.Account, name, nick, desc, avatar, banne
 		Banner:      banner,
 		AccountID:   &user.ID,
 	}
+	var attachments []string
 	if user.Avatar != nil && len(publisher.Avatar) == 0 {
+		attachments = append(attachments, *user.Avatar)
 		publisher.Avatar = *user.Avatar
 	}
 	if user.Banner != nil && len(publisher.Banner) == 0 {
+		attachments = append(attachments, *user.Banner)
 		publisher.Banner = *user.Banner
+	}
+
+	if len(attachments) > 0 {
+		filekit.CountAttachmentUsage(gap.Nx, &proto.UpdateUsageRequest{
+			Rid:   attachments,
+			Delta: 1,
+		})
 	}
 
 	if err := database.C.Create(&publisher).Error; err != nil {
@@ -57,11 +71,21 @@ func CreateOrganizationPublisher(user authm.Account, realm authm.Realm, name, ni
 		RealmID:     &realm.ID,
 		AccountID:   &user.ID,
 	}
+	var attachments []string
 	if realm.Avatar != nil && len(publisher.Avatar) == 0 {
+		attachments = append(attachments, *realm.Avatar)
 		publisher.Avatar = *realm.Avatar
 	}
 	if realm.Banner != nil && len(publisher.Banner) == 0 {
+		attachments = append(attachments, *realm.Banner)
 		publisher.Banner = *realm.Banner
+	}
+
+	if len(attachments) > 0 {
+		filekit.CountAttachmentUsage(gap.Nx, &proto.UpdateUsageRequest{
+			Rid:   attachments,
+			Delta: 1,
+		})
 	}
 
 	if err := database.C.Create(&publisher).Error; err != nil {
@@ -70,11 +94,33 @@ func CreateOrganizationPublisher(user authm.Account, realm authm.Realm, name, ni
 	return publisher, nil
 }
 
-func EditPublisher(user authm.Account, publisher models.Publisher) (models.Publisher, error) {
+func EditPublisher(user authm.Account, publisher, og models.Publisher) (models.Publisher, error) {
 	if publisher.Type == models.PublisherTypePersonal {
 		if *publisher.AccountID != user.ID {
 			return publisher, fmt.Errorf("you cannot transfer personal publisher")
 		}
+	}
+
+	var minusAttachments, plusAttachments []string
+	if publisher.Avatar != og.Avatar {
+		minusAttachments = append(minusAttachments, og.Avatar)
+		plusAttachments = append(plusAttachments, publisher.Avatar)
+	}
+	if publisher.Banner != og.Banner {
+		minusAttachments = append(minusAttachments, og.Banner)
+		plusAttachments = append(plusAttachments, publisher.Banner)
+	}
+	if len(minusAttachments) > 0 {
+		filekit.CountAttachmentUsage(gap.Nx, &proto.UpdateUsageRequest{
+			Rid:   minusAttachments,
+			Delta: -1,
+		})
+	}
+	if len(plusAttachments) > 0 {
+		filekit.CountAttachmentUsage(gap.Nx, &proto.UpdateUsageRequest{
+			Rid:   plusAttachments,
+			Delta: 1,
+		})
 	}
 
 	err := database.C.Save(&publisher).Error
