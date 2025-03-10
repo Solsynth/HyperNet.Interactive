@@ -235,6 +235,7 @@ func editQuestion(c *fiber.Ctx) error {
 	rawBody, _ := jsoniter.Marshal(newBody)
 	_ = jsoniter.Unmarshal(rawBody, &newBodyMapping)
 
+	og := item
 	item.Alias = data.Alias
 	item.Body = newBodyMapping
 	item.Language = services.DetectLanguage(data.Content)
@@ -255,7 +256,7 @@ func editQuestion(c *fiber.Ctx) error {
 		item.Visibility = *data.Visibility
 	}
 
-	if item, err = services.EditPost(item); err != nil {
+	if item, err = services.EditPost(item, og); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
 		_ = authkit.AddEventExt(
@@ -319,7 +320,7 @@ func selectQuestionAnswer(c *fiber.Ctx) error {
 
 	// Preload publisher data
 	item.Publisher = publisher
-	if item, err = services.EditPost(item); err != nil {
+	if item, err = services.EditPost(item, item); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
 		// Give the reward

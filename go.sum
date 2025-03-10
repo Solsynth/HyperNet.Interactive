@@ -37,8 +37,8 @@ git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2 h1:dPBdssDI
 git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2/go.mod h1:NKSTeRc1mgg726iaCLEBoYEcVroIrGU5w2rnGf92LWE=
 git.solsynth.dev/hypernet/nexus v0.0.0-20241123050605-25ab1371739b h1:8yB9kMwEMY/nIbmDDxrhH5sTypgmK5PIIiIfP5QXx4s=
 git.solsynth.dev/hypernet/nexus v0.0.0-20241123050605-25ab1371739b/go.mod h1:PhLCv2lsNoscPVJbkWnxwQnJ141lc4RIEkVffrHwl4s=
-git.solsynth.dev/hypernet/paperclip v0.0.0-20250124092128-7c3334a57a94 h1:PYk080kR8USiQhbd1uP/U9zJfjioA/PcTYjwsxaPQY4=
-git.solsynth.dev/hypernet/paperclip v0.0.0-20250124092128-7c3334a57a94/go.mod h1:IAmYjvAzQbLWllg0/k9r8az7uXPKILxbZNyXe5yXMts=
+git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47 h1:fvu+bNKPTNtQocssnKbEZ66MqR0iBfAxY3HwlqnmYyE=
+git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47/go.mod h1:jvxq2qftz2v72x+24+cTFJdQKr9eHQTdk3KVR7cx36s=
 git.solsynth.dev/hypernet/passport v0.0.0-20250128183757-09010d5867ed h1:+z84T2At6CbfZfo7zvvMQP4zv/+tGM5KlJlCSoIkB8Y=
 git.solsynth.dev/hypernet/passport v0.0.0-20250128183757-09010d5867ed/go.mod h1:h78BjtyDuchDDlddLtk3HjvDI7DAK8Jzk/uVwqvv2cw=
 git.solsynth.dev/hypernet/pusher v0.0.0-20241228030233-50ff8304e465 h1:KFtv9lF0JMUGsq1uHwQvop8PTyqdiLuUQuRrd5WmzPk=
@@ -97,8 +97,6 @@ github.com/fsnotify/fsnotify v1.8.0 h1:dAwr6QBTBZIkG8roQaJjGof0pp0EeF+tNV7YBP3F/
 github.com/fsnotify/fsnotify v1.8.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=
-github.com/go-ap/activitypub v0.0.0-20250124194921-d52b4c694e14 h1:4VkepceDBxPt9BwsHncwtwIZCCgCuxctFHfosz8aWQA=
-github.com/go-ap/activitypub v0.0.0-20250124194921-d52b4c694e14/go.mod h1:IO2PtAsxfGXN5IHrPuOslENFbq7MprYLNOyiiOELoRQ=
 github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581 h1:73sFEdBsWBTBut0aDMPgt8HRuMO+ML0fd8AA/zjO8BQ=
 github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581/go.mod h1:IO2PtAsxfGXN5IHrPuOslENFbq7MprYLNOyiiOELoRQ=
 github.com/go-ap/errors v0.0.0-20250124135319-3da8adefd4a9 h1:AJBGzuJVgfkKF3LoXCNQfH9yWmsVDV/oPDJE/zeXOjE=

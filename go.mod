@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2
 	git.solsynth.dev/hypernet/nexus v0.0.0-20241123050605-25ab1371739b
-	git.solsynth.dev/hypernet/paperclip v0.0.0-20250124092128-7c3334a57a94
+	git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47
 	git.solsynth.dev/hypernet/passport v0.0.0-20250128183757-09010d5867ed
 	git.solsynth.dev/hypernet/pusher v0.0.0-20241228030233-50ff8304e465
 	git.solsynth.dev/hypernet/wallet v0.0.0-20250129150034-87b94cdb5488
@@ -13,6 +13,7 @@ require (
 	github.com/eko/gocache/lib/v4 v4.1.6
 	github.com/eko/gocache/store/ristretto/v4 v4.2.2
 	github.com/fatih/color v1.18.0
+	github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/json-iterator/go v1.1.12
@@ -36,7 +37,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
-	github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581 // indirect
 	github.com/go-ap/errors v0.0.0-20250124135319-3da8adefd4a9 // indirect
 	github.com/go-ap/jsonld v0.0.0-20221030091449-f2a191312c73 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

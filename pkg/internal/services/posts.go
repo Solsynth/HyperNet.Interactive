@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	localCache "git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/proto"
+	"git.solsynth.dev/hypernet/paperclip/pkg/filekit"
 	pproto "git.solsynth.dev/hypernet/paperclip/pkg/proto"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
@@ -555,7 +557,7 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 	}
 
 	item.Publisher = user
-	_ = updatePostAttachmentVisibility(item)
+	_ = updatePostAttachmentMeta(item)
 
 	// Notify the original poster its post has been replied
 	if item.ReplyID != nil {
@@ -618,7 +620,7 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 	return item, nil
 }
 
-func EditPost(item models.Post) (models.Post, error) {
+func EditPost(item models.Post, og models.Post) (models.Post, error) {
 	if _, ok := item.Body["content_truncated"]; ok {
 		return item, fmt.Errorf("prevented from editing post with truncated content")
 	}
@@ -656,17 +658,49 @@ func EditPost(item models.Post) (models.Post, error) {
 
 	if err == nil {
 		item.Publisher = pub
-		_ = updatePostAttachmentVisibility(item)
+		_ = updatePostAttachmentMeta(item)
 	}
 
 	return item, err
 }
 
-func updatePostAttachmentVisibility(item models.Post) error {
-	log.Debug().Any("attachments", item.Body["attachments"]).Msg("Updating post attachments visibility...")
+func updatePostAttachmentMeta(item models.Post, old ...models.Post) error {
+	log.Debug().Any("attachments", item.Body["attachments"]).Msg("Updating post attachments meta...")
+
+	sameAsOld := reflect.DeepEqual(old[0].Body, item.Body)
+	if len(old) > 0 && !sameAsOld {
+		val, _ := old[0].Body["attachments"].([]string)
+		if dat, ok := item.Body["thumbnail"].(string); ok {
+			val = append(val, dat)
+		}
+		if dat, ok := item.Body["video"].(string); ok {
+			val = append(val, dat)
+		}
+		if len(val) > 0 {
+			filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
+				Rid:   val,
+				Delta: -1,
+			})
+		}
+	}
+	if len(old) == 0 || !sameAsOld {
+		val, _ := item.Body["attachments"].([]string)
+		if dat, ok := item.Body["thumbnail"].(string); ok {
+			val = append(val, dat)
+		}
+		if dat, ok := item.Body["video"].(string); ok {
+			val = append(val, dat)
+		}
+		if len(val) > 0 {
+			filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
+				Rid:   val,
+				Delta: 1,
+			})
+		}
+	}
 
 	if item.Publisher.AccountID == nil {
-		log.Warn().Msg("Post publisher did not have account id, skip updating attachments visibility...")
+		log.Warn().Msg("Post publisher did not have account id, skip updating attachments meta...")
 		return nil
 	}
 
@@ -712,15 +746,8 @@ func DeletePost(item models.Post) error {
 			return nil
 		}
 
-		conn, err := gap.Nx.GetClientGrpcConn("uc")
-		if err != nil {
-			return nil
-		}
-
-		pc := pproto.NewAttachmentServiceClient(conn)
-		_, err = pc.DeleteAttachment(context.Background(), &pproto.DeleteAttachmentRequest{
-			Rid:    lo.Uniq(val),
-			UserId: lo.ToPtr(uint64(*item.Publisher.AccountID)),
+		err := filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
+			Rid: lo.Uniq(val),
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("An error occurred when deleting post attachment...")
@@ -742,15 +769,8 @@ func DeletePostInBatch(items []models.Post) error {
 		}
 	}
 
-	conn, err := gap.Nx.GetClientGrpcConn("uc")
-	if err != nil {
-		return nil
-	}
-
-	pc := pproto.NewAttachmentServiceClient(conn)
-	_, err = pc.DeleteAttachment(context.Background(), &pproto.DeleteAttachmentRequest{
+	err := filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
 		Rid: lo.Uniq(attachments),
-		// FIXME Some issues here, if the user linked others uploaded attachment, it will be deleted
 	})
 	if err != nil {
 		log.Error().Err(err).Msg("An error occurred when deleting post attachment...")

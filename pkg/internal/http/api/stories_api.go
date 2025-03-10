@@ -208,6 +208,7 @@ func editStory(c *fiber.Ctx) error {
 	rawBody, _ := jsoniter.Marshal(body)
 	_ = jsoniter.Unmarshal(rawBody, &bodyMapping)
 
+	og := item
 	item.Alias = data.Alias
 	item.Body = bodyMapping
 	item.Language = services.DetectLanguage(data.Content)
@@ -229,7 +230,7 @@ func editStory(c *fiber.Ctx) error {
 		item.Visibility = *data.Visibility
 	}
 
-	if item, err = services.EditPost(item); err != nil {
+	if item, err = services.EditPost(item, og); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else {
 		_ = authkit.AddEventExt(
