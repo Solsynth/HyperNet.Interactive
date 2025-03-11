@@ -76,7 +76,7 @@ func FetchTimeline(server string, limit int) ([]MastodonPost, error) {
 		return nil, fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, body)
 	}
 
-	log.Debug().Str("url", url).Bytes("response", body).Msg("Fetched mastodon timeline...")
+	log.Debug().Str("url", url).Msg("Fetched mastodon timeline...")
 
 	var posts []MastodonPost
 	if err := jsoniter.Unmarshal(body, &posts); err != nil {
