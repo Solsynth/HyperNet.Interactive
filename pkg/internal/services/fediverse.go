@@ -35,7 +35,7 @@ func ReadFriendConfig() {
 func FetchFediversePost(cfg FediverseFriendConfig) ([]models.FediversePost, error) {
 	switch cfg.Type {
 	case "mastodon":
-		data, err := mastodon.FetchTimeline(cfg.URL, cfg.BatchSize)
+		data, err := mastodon.FetchTimeline(cfg.URL, 50)
 		if err != nil {
 			return nil, err
 		}

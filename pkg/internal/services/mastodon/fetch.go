@@ -2,13 +2,16 @@ package mastodon
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+	"github.com/gofiber/fiber/v2"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 )
 
@@ -56,6 +59,7 @@ func (v MastodonPost) ToFediversePost() models.FediversePost {
 
 func FetchTimeline(server string, limit int) ([]MastodonPost, error) {
 	url := fmt.Sprintf("%s/api/v1/timelines/public?limit=%d", server, limit)
+	log.Debug().Str("url", url).Msg("Fetching mastodon timeline...")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -63,8 +67,19 @@ func FetchTimeline(server string, limit int) ([]MastodonPost, error) {
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	if resp.StatusCode != fiber.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, body)
+	}
+
+	log.Debug().Str("url", url).Bytes("response", body).Msg("Fetched mastodon timeline...")
+
 	var posts []MastodonPost
-	if err := jsoniter.NewDecoder(resp.Body).Decode(&posts); err != nil {
+	if err := jsoniter.Unmarshal(body, &posts); err != nil {
 		return nil, fmt.Errorf("failed to parse timeline JSON: %v", err)
 	}
 
