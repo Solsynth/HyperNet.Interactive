@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
@@ -30,9 +32,13 @@ func getWebfinger(c *fiber.Ctx) error {
 	if username == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid username"})
 	}
+	parts := strings.SplitN(username, "@", 2)
+	if len(parts) != 2 {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid username"})
+	}
 
 	var publisher models.Publisher
-	if err := database.C.Where("name = ?", username).First(&publisher).Error; err != nil {
+	if err := database.C.Where("name = ?", parts[0]).First(&publisher).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 
