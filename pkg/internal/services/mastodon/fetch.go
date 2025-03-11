@@ -1,7 +1,6 @@
 package mastodon
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +8,7 @@ import (
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/samber/lo"
 )
 
@@ -64,7 +64,7 @@ func FetchTimeline(server string, limit int) ([]MastodonPost, error) {
 	defer resp.Body.Close()
 
 	var posts []MastodonPost
-	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
+	if err := jsoniter.NewDecoder(resp.Body).Decode(&posts); err != nil {
 		return nil, fmt.Errorf("failed to parse timeline JSON: %v", err)
 	}
 

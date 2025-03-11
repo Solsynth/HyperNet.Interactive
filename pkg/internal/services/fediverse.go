@@ -33,20 +33,19 @@ func ReadFriendConfig() {
 }
 
 func FetchFediversePost(cfg FediverseFriendConfig) ([]models.FediversePost, error) {
-	var posts []models.FediversePost
 	switch cfg.Type {
 	case "mastodon":
 		data, err := mastodon.FetchTimeline(cfg.URL, cfg.BatchSize)
 		if err != nil {
 			return nil, err
 		}
-		posts = lo.Map(data, func(item mastodon.MastodonPost, _ int) models.FediversePost {
+		posts := lo.Map(data, func(item mastodon.MastodonPost, _ int) models.FediversePost {
 			return item.ToFediversePost()
 		})
+		return posts, nil
 	default:
 		return nil, fmt.Errorf("unsupported fediverse service: %s", cfg.Type)
 	}
-	return posts, nil
 }
 
 func FetchFediverseTimedTask() {
@@ -63,6 +62,7 @@ func FetchFediverseTimedTask() {
 		if err != nil {
 			log.Error().Err(err).Str("id", friend.ID).Str("url", friend.URL).Msg("Failed to fetch fediverse friend timelime...")
 		}
+		log.Info().Str("id", friend.ID).Str("url", friend.URL).Int("count", len(posts)).Msg("Fetched fediverse friend timeline...")
 		totalPosts = append(totalPosts, posts...)
 	}
 
