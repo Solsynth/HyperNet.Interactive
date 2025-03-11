@@ -1,15 +1,18 @@
 package models
 
-import "git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+import (
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+	"gorm.io/datatypes"
+)
 
 type FediversePost struct {
 	cruda.BaseModel
 
-	Identifier string   `json:"identifier" gorm:"uniqueIndex"`
-	Origin     string   `json:"origin"`
-	Content    string   `json:"content"`
-	Language   string   `json:"language"`
-	Images     []string `json:"images"`
+	Identifier string                      `json:"identifier" gorm:"uniqueIndex"`
+	Origin     string                      `json:"origin"`
+	Content    string                      `json:"content"`
+	Language   string                      `json:"language"`
+	Images     datatypes.JSONSlice[string] `json:"images"`
 
 	User   FediverseUser `json:"user"`
 	UserID uint          `json:"user_id"`
