@@ -68,6 +68,7 @@ func main() {
 	// Configure timed tasks
 	quartz := cron.New(cron.WithLogger(cron.VerbosePrintfLogger(&log.Logger)))
 	quartz.AddFunc("@every 5m", services.FlushPostViews)
+	quartz.AddFunc("@every 5m", services.FetchFediverseTimedTask)
 	quartz.Start()
 
 	// Initialize cache
