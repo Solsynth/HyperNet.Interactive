@@ -1,10 +1,12 @@
 package http
 
 import (
-	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
-	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	"strings"
 
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
+	"git.solsynth.dev/hypernet/passport/pkg/authkit"
+
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/admin"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/api"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -59,7 +61,8 @@ func NewServer() *App {
 	app.Use(sec.ContextMiddleware(IReader))
 	app.Use(authkit.ParseAccountMiddleware)
 
-	api.MapAPIs(app, "/api")
+	api.MapControllers(app, "/api")
+	admin.MapControllers(app, "/api/admin")
 
 	return &App{
 		app: app,
