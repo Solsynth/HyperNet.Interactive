@@ -557,7 +557,10 @@ func NewPost(user models.Publisher, item models.Post) (models.Post, error) {
 	}
 
 	item.Publisher = user
-	_ = updatePostAttachmentMeta(item)
+	err = UpdatePostAttachmentMeta(item)
+	if err != nil {
+		log.Error().Err(err).Msg("An error occurred when updating post attachment meta...")
+	}
 
 	// Notify the original poster its post has been replied
 	if item.ReplyID != nil {
@@ -658,50 +661,55 @@ func EditPost(item models.Post, og models.Post) (models.Post, error) {
 
 	if err == nil {
 		item.Publisher = pub
-		_ = updatePostAttachmentMeta(item)
+		err = UpdatePostAttachmentMeta(item)
+		if err != nil {
+			log.Error().Err(err).Msg("An error occurred when updating post attachment meta...")
+		}
 	}
 
 	return item, err
 }
 
-func updatePostAttachmentMeta(item models.Post, old ...models.Post) error {
+func UpdatePostAttachmentMeta(item models.Post, old ...models.Post) error {
 	log.Debug().Any("attachments", item.Body["attachments"]).Msg("Updating post attachments meta...")
 
+	// Marking usage
 	sameAsOld := false
 	if len(old) > 0 {
 		sameAsOld = reflect.DeepEqual(old[0].Body, item.Body)
 	}
+
+	var minusAttachments, plusAttachments []string
 	if len(old) > 0 && !sameAsOld {
-		val, _ := old[0].Body["attachments"].([]string)
-		if dat, ok := item.Body["thumbnail"].(string); ok {
-			val = append(val, dat)
-		}
-		if dat, ok := item.Body["video"].(string); ok {
-			val = append(val, dat)
-		}
-		if len(val) > 0 {
-			filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
-				Rid:   val,
-				Delta: -1,
-			})
+		if val, ok := old[0].Body["attachments"].([]string); ok {
+			minusAttachments = append(minusAttachments, val...)
 		}
 	}
 	if len(old) == 0 || !sameAsOld {
-		val, _ := item.Body["attachments"].([]string)
-		if dat, ok := item.Body["thumbnail"].(string); ok {
-			val = append(val, dat)
-		}
-		if dat, ok := item.Body["video"].(string); ok {
-			val = append(val, dat)
-		}
-		if len(val) > 0 {
-			filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
-				Rid:   val,
-				Delta: 1,
-			})
+		if val, ok := item.Body["attachments"].([]string); ok {
+			plusAttachments = append(plusAttachments, val...)
 		}
 	}
+	if dat, ok := item.Body["thumbnail"].(string); ok {
+		plusAttachments = append(plusAttachments, dat)
+	}
+	if dat, ok := item.Body["video"].(string); ok {
+		plusAttachments = append(plusAttachments, dat)
+	}
+	if len(minusAttachments) > 0 {
+		filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
+			Rid:   minusAttachments,
+			Delta: -1,
+		})
+	}
+	if len(plusAttachments) > 0 {
+		filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
+			Rid:   plusAttachments,
+			Delta: 1,
+		})
+	}
 
+	// Updating visibility
 	if item.Publisher.AccountID == nil {
 		log.Warn().Msg("Post publisher did not have account id, skip updating attachments meta...")
 		return nil
