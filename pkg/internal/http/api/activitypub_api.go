@@ -54,6 +54,7 @@ func apUserOutbox(c *fiber.Ctx) error {
 	}
 
 	tx, err := UniversalPostFilter(c, database.C)
+	tx.Where("publisher_id = ? AND reply_id IS NULL", publisher.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
