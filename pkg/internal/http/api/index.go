@@ -9,8 +9,8 @@ func MapAPIs(app *fiber.App, baseURL string) {
 	{
 		activitypub := api.Group("/activitypub").Name("ActivityPub API")
 		{
-			activitypub.Get("/publishers/:name", apGetPublisher)
-			activitypub.Get("/posts", apGetPost)
+			activitypub.Post("/users/:name/inbox", apUserInbox)
+			activitypub.Get("/users/:name/outbox", apUserOutbox)
 		}
 
 		publishers := api.Group("/publishers").Name("Publisher API")

@@ -1,18 +1,43 @@
 package api
 
 import (
-	"fmt"
+	"log"
+	"net/http"
+	"strconv"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
-	vocab "github.com/go-ap/activitypub"
+	"github.com/go-ap/activitypub"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 )
 
-func apGetPublisher(c *fiber.Ctx) error {
+func apUserInbox(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	var activity activitypub.Activity
+	if err := c.BodyParser(&activity); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid activitypub event")
+	}
+
+	// TODO Handle all these
+	switch activity.Type {
+	case activitypub.LikeType:
+		log.Printf("User %s received a Like on: %s", name, activity.Object.GetID())
+	case activitypub.FollowType:
+		log.Printf("User %s received a Follow request from: %s", name, activity.Actor.GetID())
+	case activitypub.CreateType:
+		log.Printf("New post received for %s: %s", name, activity.Object.GetID())
+	default:
+		log.Printf("Unhandled activity type received: %+v", activity)
+	}
+
+	return c.Status(http.StatusAccepted).SendString("Activity received")
+}
+
+func apUserOutbox(c *fiber.Ctx) error {
 	name := c.Params("name")
 
 	var publisher models.Publisher
@@ -20,74 +45,60 @@ func apGetPublisher(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 
-	url := vocab.ID("https://solsynth.dev/publishers/" + publisher.Name)
-	actor := vocab.Actor{
-		ID:   url,
-		Type: vocab.PersonType,
-		Name: vocab.DefaultNaturalLanguageValue(publisher.Nick),
-		URL:  url,
-		Icon: vocab.Image{},
-	}
-
-	return c.JSON(actor)
-}
-
-func apGetPost(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 0)
-	offset := c.QueryInt("offset", 0)
-
-	tx := database.C
-
-	var err error
-	if tx, err = UniversalPostFilter(c, tx); err != nil {
-		return err
-	}
-
-	items, err := services.ListPost(tx, take, offset, "published_at DESC", nil)
+	take := 50
+	tx, err := UniversalPostFilter(c, database.C)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
-	if c.QueryBool("truncate", true) {
-		for _, item := range items {
-			if item != nil {
-				item = lo.ToPtr(services.TruncatePostContent(*item))
+	var activities []activitypub.Item
+	if posts, err := services.ListPost(tx, take, 0, "published_at DESC", nil); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	} else {
+		for _, post := range posts {
+			if post == nil {
+				continue
 			}
+			var content string
+			if val, ok := post.Body["content"].(string); ok {
+				content = val
+			} else {
+				content = "Posted a post"
+			}
+			note := activitypub.Note{
+				ID:           services.GetActivityID("/posts/" + strconv.Itoa(int(post.ID))),
+				Type:         activitypub.NoteType,
+				Attachment:   nil,
+				AttributedTo: services.GetActivityIRI("/users/" + publisher.Name),
+				Published: lo.TernaryF(post.PublishedAt == nil, func() time.Time {
+					return post.CreatedAt
+				}, func() time.Time {
+					return *post.PublishedAt
+				}),
+				Updated: lo.TernaryF(post.EditedAt == nil, func() time.Time {
+					return post.UpdatedAt
+				}, func() time.Time {
+					return *post.EditedAt
+				}),
+				To:      activitypub.ItemCollection{activitypub.PublicNS},
+				Content: activitypub.DefaultNaturalLanguageValue(content),
+			}
+			activity := activitypub.Create{
+				ID:     services.GetActivityID("/activities/posts/" + strconv.Itoa(int(post.ID))),
+				Type:   activitypub.CreateType,
+				Actor:  services.GetActivityIRI("/users/" + publisher.Name),
+				Object: note,
+			}
+			activities = append(activities, activity)
 		}
 	}
 
-	var acts []vocab.Activity
-	for _, item := range items {
-		pubUrl := vocab.ID("https://solsynth.dev/publishers/" + item.Publisher.Name)
-		url := fmt.Sprintf("https://solsynth.dev/posts/%d", item.ID)
-		content, ok := item.Body["content"].(string)
-		if !ok {
-			content = "Posted a post"
-		}
-		acts = append(acts, vocab.Activity{
-			ID:   vocab.ID(url),
-			Type: vocab.CreateType,
-			Actor: vocab.Actor{
-				ID:   pubUrl,
-				Type: vocab.PersonType,
-				Name: vocab.DefaultNaturalLanguageValue(item.Publisher.Nick),
-				URL:  pubUrl,
-				Icon: vocab.Image{},
-			},
-			Object: vocab.Object{
-				ID:   vocab.ID(url),
-				Type: vocab.NoteType,
-				Name: vocab.DefaultNaturalLanguageValue(content),
-				URL:  vocab.ID(url),
-				Icon: vocab.Image{},
-			},
-			Published: lo.TernaryF(item.PublishedAt != nil, func() time.Time {
-				return *item.PublishedAt
-			}, func() time.Time {
-				return item.CreatedAt
-			}),
-		})
+	outbox := activitypub.OrderedCollection{
+		ID:           services.GetActivityID("/users/" + publisher.Name + "/outbox"),
+		Type:         activitypub.OrderedCollectionType,
+		TotalItems:   uint(min(take, len(activities))),
+		OrderedItems: activitypub.ItemCollection(activities),
 	}
 
-	return c.JSON(acts)
+	return c.JSON(outbox)
 }
