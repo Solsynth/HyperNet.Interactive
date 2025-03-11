@@ -7,6 +7,7 @@ import (
 func MapAPIs(app *fiber.App, baseURL string) {
 	api := app.Group(baseURL).Name("API")
 	{
+		api.Get("/webfinger", getWebfinger)
 		activitypub := api.Group("/activitypub").Name("ActivityPub API")
 		{
 			activitypub.Post("/users/:name/inbox", apUserInbox)
