@@ -20,7 +20,7 @@ type FediverseFriendConfig struct {
 	ID        string `json:"id"`
 	URL       string `json:"url"`
 	Type      string `json:"type"`
-	BatchSize int    `json:"batch_size"`
+	BatchSize int    `json:"batch_size" toml:"batch_size"`
 }
 
 var fediverseFriends []FediverseFriendConfig
