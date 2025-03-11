@@ -44,6 +44,7 @@ func main() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Panic().Err(err).Msg("An error occurred when loading settings.")
 	}
+	services.ReadFriendConfig()
 
 	// Connect to nexus
 	if err := gap.InitializeToNexus(); err != nil {
