@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -39,20 +41,30 @@ func apUserInbox(c *fiber.Ctx) error {
 
 func apUserOutbox(c *fiber.Ctx) error {
 	name := c.Params("name")
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
+
+	if limit > 100 {
+		limit = 100
+	}
 
 	var publisher models.Publisher
 	if err := database.C.Where("name = ?", name).First(&publisher).Error; err != nil {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 
-	take := 50
 	tx, err := UniversalPostFilter(c, database.C)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
+	count, err := services.CountPost(tx)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	var activities []activitypub.Item
-	if posts, err := services.ListPost(tx, take, 0, "published_at DESC", nil); err != nil {
+	if posts, err := services.ListPost(tx, limit, (page-1)*limit, "published_at DESC", nil); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	} else {
 		for _, post := range posts {
@@ -93,11 +105,22 @@ func apUserOutbox(c *fiber.Ctx) error {
 		}
 	}
 
-	outbox := activitypub.OrderedCollection{
+	totalPages := int(math.Ceil(float64(count) / float64(limit)))
+
+	outbox := activitypub.OrderedCollectionPage{
 		ID:           services.GetActivityID("/users/" + publisher.Name + "/outbox"),
 		Type:         activitypub.OrderedCollectionType,
-		TotalItems:   uint(min(take, len(activities))),
+		TotalItems:   uint(count),
 		OrderedItems: activitypub.ItemCollection(activities),
+		First:        services.GetActivityIRI(fmt.Sprintf("/users/%s/outbox?page=%d", publisher.Name, 1)),
+		Last:         services.GetActivityIRI(fmt.Sprintf("/users/%s/outbox?page=%d", publisher.Name, totalPages)),
+	}
+
+	if page > 1 {
+		outbox.Prev = services.GetActivityIRI(fmt.Sprintf("/users/%s/outbox?page=%d&limit=%d", publisher.Name, page-1, limit))
+	}
+	if page < totalPages {
+		outbox.Next = services.GetActivityIRI(fmt.Sprintf("/users/%s/outbox?page=%d&limit=%d", publisher.Name, page+1, limit))
 	}
 
 	return c.JSON(outbox)

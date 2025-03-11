@@ -5,7 +5,7 @@ grpc_bind = "0.0.0.0:7005"
 
 nexus_addr = "localhost:7001"
 
-activitypub_base_url = "https://solsynth.dev/activitypub"
+activitypub_base_url = "https://api.sn.solsynth.dev/cgi/co/activitypub"
 
 [debug]
 database = true
