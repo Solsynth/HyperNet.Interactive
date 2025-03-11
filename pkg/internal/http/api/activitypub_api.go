@@ -126,3 +126,24 @@ func apUserOutbox(c *fiber.Ctx) error {
 
 	return c.JSON(outbox)
 }
+
+func apUserActor(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	var publisher models.Publisher
+	if err := database.C.Where("name = ?", name).First(&publisher).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	id := services.GetActivityID("/users/" + publisher.Name)
+	actor := activitypub.Actor{
+		ID:                id,
+		Inbox:             id + "/inbox",
+		Outbox:            id + "/outbox",
+		Type:              activitypub.PersonType,
+		Name:              activitypub.DefaultNaturalLanguageValue(publisher.Name),
+		PreferredUsername: activitypub.DefaultNaturalLanguageValue(publisher.Nick),
+	}
+
+	return c.JSON(actor)
+}
