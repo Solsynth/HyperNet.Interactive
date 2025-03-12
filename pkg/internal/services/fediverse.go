@@ -58,17 +58,44 @@ func FetchFediverseTimedTask() {
 	log.Debug().Msg("Starting fetching fediverse friends timeline...")
 
 	var totalPosts []models.FediversePost
+	var totalUsers []models.FediverseUser
+	userMap := make(map[string]models.FediverseUser)
+
 	for _, friend := range fediverseFriends {
 		log.Info().Str("id", friend.ID).Str("url", friend.URL).Msg("Fetching fediverse friend timeline...")
 		posts, err := FetchFediversePost(friend)
 		if err != nil {
-			log.Error().Err(err).Str("id", friend.ID).Str("url", friend.URL).Msg("Failed to fetch fediverse friend timelime...")
+			log.Error().Err(err).Str("id", friend.ID).Str("url", friend.URL).Msg("Failed to fetch fediverse friend timeline...")
+			continue
 		}
+
 		log.Info().Str("id", friend.ID).Str("url", friend.URL).Int("count", len(posts)).Msg("Fetched fediverse friend timeline...")
+
+		for _, post := range posts {
+			if _, exists := userMap[post.User.Identifier]; !exists {
+				userMap[post.User.Identifier] = post.User
+			}
+		}
+
 		totalPosts = append(totalPosts, posts...)
 	}
 
-	if err := database.C.Clauses(clause.OnConflict{DoNothing: true}).Create(&totalPosts).Error; err != nil {
-		log.Error().Err(err).Msg("Failed to save timeline posts...")
+	for _, user := range userMap {
+		totalUsers = append(totalUsers, user)
+	}
+
+	if len(totalUsers) > 0 {
+		if err := database.C.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "identifier"}},
+			DoUpdates: clause.AssignmentColumns([]string{"name", "nick", "avatar"}),
+		}).Create(&totalUsers).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to save fediverse users...")
+		}
+	}
+
+	if len(totalPosts) > 0 {
+		if err := database.C.Clauses(clause.OnConflict{DoNothing: true}).Create(&totalPosts).Error; err != nil {
+			log.Error().Err(err).Msg("Failed to save timeline posts...")
+		}
 	}
 }
