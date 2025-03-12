@@ -52,6 +52,7 @@ func (v MastodonPost) ToFediversePost() models.FediversePost {
 			Identifier: v.Account.Acct,
 			Name:       v.Account.Username,
 			Nick:       v.Account.DisplayName,
+			Avatar:     v.Account.Avatar,
 			Origin:     v.Server,
 		},
 	}

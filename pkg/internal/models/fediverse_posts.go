@@ -23,6 +23,7 @@ type FediverseUser struct {
 
 	Identifier string `json:"identifier" gorm:"uniqueIndex"`
 	Origin     string `json:"origin"`
+	Avatar     string `json:"avatar"`
 	Name       string `json:"name"`
 	Nick       string `json:"nick"`
 }
