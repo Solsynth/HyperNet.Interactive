@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -44,6 +45,10 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 		return feed, fmt.Errorf("failed to load fediverse posts: %v", err)
 	}
 	feed = append(feed, fediPosts...)
+
+	sort.Slice(feed, func(i, j int) bool {
+		return feed[i].CreatedAt.After(feed[j].CreatedAt)
+	})
 
 	return feed, nil
 }
