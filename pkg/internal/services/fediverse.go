@@ -44,6 +44,8 @@ func FetchFediversePost(cfg FediverseFriendConfig) ([]models.FediversePost, erro
 		})
 		return posts, nil
 	default:
+		// TODO Other platform fetching is still under development
+		// DO NOT USE THEM
 		return nil, fmt.Errorf("unsupported fediverse service: %s", cfg.Type)
 	}
 }

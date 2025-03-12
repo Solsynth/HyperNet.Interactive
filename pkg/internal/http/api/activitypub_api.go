@@ -53,7 +53,7 @@ func apUserOutbox(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, err.Error())
 	}
 
-	tx, err := UniversalPostFilter(c, database.C)
+	tx, err := services.UniversalPostFilter(c, database.C)
 	tx.Where("publisher_id = ? AND reply_id IS NULL", publisher.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())

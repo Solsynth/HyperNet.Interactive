@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
@@ -50,7 +52,7 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 	tx := database.C
 
 	var err error
-	if tx, err = UniversalPostFilter(c, tx); err != nil {
+	if tx, err = services.UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 
@@ -82,4 +84,26 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 		"count": count,
 		"data":  items,
 	})
+}
+
+func getRecommendationFeed(c *fiber.Ctx) error {
+	limit := c.QueryInt("limit", 20)
+	cursor := c.QueryInt("cursor", 0)
+
+	var cursorTime *time.Time
+	if cursor > 0 {
+		cursorTime = lo.ToPtr(time.Unix(int64(cursor), 0))
+	}
+
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
+	entries, err := services.GetFeed(c, limit, userId, cursorTime)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(entries)
 }

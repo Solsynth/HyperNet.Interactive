@@ -31,6 +31,7 @@ func MapControllers(app *fiber.App, baseURL string) {
 		{
 			recommendations.Get("/", listRecommendation)
 			recommendations.Get("/shuffle", listRecommendationShuffle)
+			recommendations.Get("/feed", getRecommendationFeed)
 		}
 
 		stories := api.Group("/stories").Name("Story API")

@@ -414,9 +414,15 @@ func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint, noReact 
 		take = 100
 	}
 
+	if take >= 0 {
+		tx = tx.Limit(take)
+	}
+	if offset >= 0 {
+		tx = tx.Offset(offset)
+	}
+
 	var items []*models.Post
 	if err := PreloadGeneral(tx).
-		Limit(take).Offset(offset).
 		Order(order).
 		Find(&items).Error; err != nil {
 		return items, err

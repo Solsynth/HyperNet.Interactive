@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
-	"gorm.io/gorm"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -21,68 +19,6 @@ import (
 	"github.com/samber/lo"
 )
 
-type UniversalPostFilterConfig struct {
-	ShowDraft     bool
-	ShowReply     bool
-	ShowCollapsed bool
-}
-
-func UniversalPostFilter(c *fiber.Ctx, tx *gorm.DB, cfg ...UniversalPostFilterConfig) (*gorm.DB, error) {
-	var config UniversalPostFilterConfig
-	if len(cfg) > 0 {
-		config = cfg[0]
-	} else {
-		config = UniversalPostFilterConfig{}
-	}
-
-	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
-		tx = services.FilterPostWithUserContext(c, tx, &user)
-		if c.QueryBool("noDraft", true) && !config.ShowDraft {
-			tx = services.FilterPostDraft(tx)
-			tx = services.FilterPostWithPublishedAt(tx, time.Now())
-		} else {
-			tx = services.FilterPostDraftWithAuthor(database.C, user.ID)
-			tx = services.FilterPostWithPublishedAt(tx, time.Now(), user.ID)
-		}
-	} else {
-		tx = services.FilterPostWithUserContext(c, tx, nil)
-		tx = services.FilterPostDraft(tx)
-		tx = services.FilterPostWithPublishedAt(tx, time.Now())
-	}
-
-	if c.QueryBool("noReply", true) && !config.ShowReply {
-		tx = services.FilterPostReply(tx)
-	}
-	if c.QueryBool("noCollapse", true) && !config.ShowCollapsed {
-		tx = tx.Where("is_collapsed = ? OR is_collapsed IS NULL", false)
-	}
-
-	if len(c.Query("author")) > 0 {
-		var author models.Publisher
-		if err := database.C.Where("name = ?", c.Query("author")).First(&author).Error; err != nil {
-			return tx, fiber.NewError(fiber.StatusNotFound, err.Error())
-		}
-		tx = tx.Where("publisher_id = ?", author.ID)
-	}
-
-	if len(c.Query("categories")) > 0 {
-		tx = services.FilterPostWithCategory(tx, c.Query("categories"))
-	}
-	if len(c.Query("tags")) > 0 {
-		tx = services.FilterPostWithTag(tx, c.Query("tags"))
-	}
-
-	if len(c.Query("type")) > 0 {
-		tx = services.FilterPostWithType(tx, c.Query("type"))
-	}
-
-	if len(c.Query("realm")) > 0 {
-		tx = services.FilterPostWithRealm(tx, c.Query("realm"))
-	}
-
-	return tx, nil
-}
-
 func getPost(c *fiber.Ctx) error {
 	id := c.Params("postId")
 
@@ -91,7 +27,7 @@ func getPost(c *fiber.Ctx) error {
 
 	tx := database.C
 
-	if tx, err = UniversalPostFilter(c, tx, UniversalPostFilterConfig{
+	if tx, err = services.UniversalPostFilter(c, tx, services.UniversalPostFilterConfig{
 		ShowReply: true,
 		ShowDraft: true,
 	}); err != nil {
@@ -140,7 +76,7 @@ func searchPost(c *fiber.Ctx) error {
 	tx = services.FilterPostWithFuzzySearch(tx, probe)
 
 	var err error
-	if tx, err = UniversalPostFilter(c, tx, UniversalPostFilterConfig{
+	if tx, err = services.UniversalPostFilter(c, tx, services.UniversalPostFilterConfig{
 		ShowReply: true,
 	}); err != nil {
 		return err
@@ -183,7 +119,7 @@ func listPost(c *fiber.Ctx) error {
 	tx := database.C
 
 	var err error
-	if tx, err = UniversalPostFilter(c, tx); err != nil {
+	if tx, err = services.UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 
@@ -224,7 +160,7 @@ func listPostMinimal(c *fiber.Ctx) error {
 	tx := database.C
 
 	var err error
-	if tx, err = UniversalPostFilter(c, tx); err != nil {
+	if tx, err = services.UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
 
