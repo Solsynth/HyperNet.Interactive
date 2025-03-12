@@ -91,6 +91,21 @@ func FetchFediverseTimedTask() {
 		}).Create(&totalUsers).Error; err != nil {
 			log.Error().Err(err).Msg("Failed to save fediverse users...")
 		}
+
+		for _, user := range totalUsers {
+			userMap[user.Identifier] = user
+		}
+	}
+
+	for i := range totalPosts {
+		if user, exists := userMap[totalPosts[i].User.Identifier]; exists {
+			totalPosts[i].UserID = user.ID
+			totalPosts[i].User = user
+		} else {
+			log.Warn().Str("user_identifier", totalPosts[i].User.Identifier).Msg("User ID not found for post, skipping")
+			totalPosts = append(totalPosts[:i], totalPosts[i+1:]...) // Remove invalid post
+			i--                                                      // Adjust index after removal
+		}
 	}
 
 	if len(totalPosts) > 0 {
