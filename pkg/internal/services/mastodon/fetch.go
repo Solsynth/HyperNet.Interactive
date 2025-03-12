@@ -42,7 +42,7 @@ func (v MastodonPost) ToFediversePost() models.FediversePost {
 		BaseModel: cruda.BaseModel{
 			CreatedAt: v.CreatedAt,
 		},
-		Identifier: v.ID,
+		Identifier: fmt.Sprintf("%s@%s", v.ID, v.Server),
 		Origin:     v.Server,
 		Content:    v.Content,
 		Language:   v.Language,
