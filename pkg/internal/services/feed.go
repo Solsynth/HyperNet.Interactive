@@ -7,6 +7,7 @@ import (
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -65,7 +66,7 @@ func ListPostForFeed(tx *gorm.DB, limit int, user *uint) ([]FeedEntry, error) {
 	entries := lo.Map(posts, func(post *models.Post, _ int) FeedEntry {
 		return FeedEntry{
 			Type:      "interactive.post",
-			Data:      post,
+			Data:      services.TruncatePostContent(post),
 			CreatedAt: post.CreatedAt,
 		}
 	})
