@@ -24,11 +24,12 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 
 	var feed []FeedEntry
 
-	interTx, err := UniversalPostFilter(c, database.C, UniversalPostFilterConfig{
-		TimeCursor: cursor,
-	})
+	interTx, err := UniversalPostFilter(c, database.C)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare load interactive posts: %v", err)
+	}
+	if cursor != nil {
+		interTx = interTx.Where("published_at < ?", *cursor)
 	}
 	interPosts, err := ListPostForFeed(interTx, limit/2, user)
 	if err != nil {
