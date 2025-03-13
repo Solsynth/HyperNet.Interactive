@@ -21,10 +21,11 @@ type MastodomAttachment struct {
 }
 
 type MastodonPost struct {
-	ID      string `json:"id"`
-	Content string `json:"content"`
-	URL     string `json:"url"`
-	Account struct {
+	ID        string `json:"id"`
+	Content   string `json:"content"`
+	URL       string `json:"url"`
+	Sensitive bool   `json:"sensitive"`
+	Account   struct {
 		Acct        string `json:"acct"`
 		Username    string `json:"username"`
 		DisplayName string `json:"display_name"`
@@ -83,6 +84,10 @@ func FetchTimeline(server string, limit int) ([]MastodonPost, error) {
 	if err := jsoniter.Unmarshal(body, &posts); err != nil {
 		return nil, fmt.Errorf("failed to parse timeline JSON: %v", err)
 	}
+
+	posts = lo.Filter(posts, func(item MastodonPost, index int) bool {
+		return !item.Sensitive
+	})
 
 	for idx := range posts {
 		posts[idx].Server = strings.Replace(strings.Replace(server, "https://", "", 1), "http://", "", 1)
