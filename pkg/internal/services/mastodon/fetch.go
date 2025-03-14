@@ -64,7 +64,7 @@ func FetchTimeline(server string, limit int, useTrend bool) ([]MastodonPost, err
 		lo.Ternary(
 			useTrend,
 			"%s/api/v1/trends/statuses?limit=%d",
-			"%s/api/v1/timelines/public?limit=%d",
+			"%s/api/v1/timelines/public?local=true&limit=%d",
 		),
 		server,
 		limit,
