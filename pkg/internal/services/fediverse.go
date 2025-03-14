@@ -17,10 +17,10 @@ type FromFediversePost interface {
 }
 
 type FediverseFriendConfig struct {
-	ID        string `json:"id"`
-	URL       string `json:"url"`
-	Type      string `json:"type"`
-	BatchSize int    `json:"batch_size" toml:"batch_size"`
+	ID       string `json:"id"`
+	URL      string `json:"url"`
+	Type     string `json:"type"`
+	Trending bool   `json:"trending"`
 }
 
 var fediverseFriends []FediverseFriendConfig
@@ -35,7 +35,7 @@ func ReadFriendConfig() {
 func FetchFediversePost(cfg FediverseFriendConfig) ([]models.FediversePost, error) {
 	switch cfg.Type {
 	case "mastodon":
-		data, err := mastodon.FetchTimeline(cfg.URL, 50)
+		data, err := mastodon.FetchTimeline(cfg.URL, 50, cfg.Trending)
 		if err != nil {
 			return nil, err
 		}

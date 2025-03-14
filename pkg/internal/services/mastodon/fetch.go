@@ -59,8 +59,16 @@ func (v MastodonPost) ToFediversePost() models.FediversePost {
 	}
 }
 
-func FetchTimeline(server string, limit int) ([]MastodonPost, error) {
-	url := fmt.Sprintf("%s/api/v1/trends/statuses?limit=%d", server, limit)
+func FetchTimeline(server string, limit int, useTrend bool) ([]MastodonPost, error) {
+	url := fmt.Sprintf(
+		lo.Ternary(
+			useTrend,
+			"%s/api/v1/trends/statuses?limit=%d",
+			"%s/api/v1/timelines/public?limit=%s",
+		),
+		server,
+		limit,
+	)
 	log.Debug().Str("url", url).Msg("Fetching mastodon timeline...")
 
 	resp, err := http.Get(url)
