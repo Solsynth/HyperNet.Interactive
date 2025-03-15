@@ -37,9 +37,9 @@ func listRecommendation(c *fiber.Ctx) error {
 		return item.ID, *item
 	})
 
-	// Revert the position
+	// Revert the position & truncate
 	for idx, item := range posts {
-		posts[idx] = newPostMap[item.ID]
+		posts[idx] = services.TruncatePostContent(newPostMap[item.ID])
 	}
 
 	return c.JSON(posts)

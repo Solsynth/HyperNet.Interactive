@@ -11,6 +11,7 @@ import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/proto"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
@@ -128,7 +129,7 @@ func ListNewsForFeed(limit int, cursor *time.Time) ([]FeedEntry, error) {
 	return lo.Map(resp.Items, func(item *proto.FeedItem, _ int) FeedEntry {
 		return FeedEntry{
 			Type:      item.Type,
-			Data:      item.Content,
+			Data:      nex.DecodeMap(item.Content),
 			CreatedAt: time.UnixMilli(int64(item.CreatedAt)),
 		}
 	}), nil
