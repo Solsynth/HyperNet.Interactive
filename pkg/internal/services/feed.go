@@ -69,7 +69,7 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 	if news, err := ListNewsForFeed(newsCount, cursor); err != nil {
 		log.Error().Err(err).Msg("Failed to load news in getting feed...")
 	} else {
-		feed = append(feed, news...)
+		feed = append(feed, news)
 	}
 
 	return feed, nil
@@ -110,10 +110,10 @@ func ListFediversePostForFeed(tx *gorm.DB, limit int) ([]FeedEntry, error) {
 	return entries, nil
 }
 
-func ListNewsForFeed(limit int, cursor *time.Time) ([]FeedEntry, error) {
+func ListNewsForFeed(limit int, cursor *time.Time) (FeedEntry, error) {
 	conn, err := gap.Nx.GetClientGrpcConn("re")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get grpc connection with reader: %v", err)
+		return FeedEntry{}, fmt.Errorf("failed to get grpc connection with reader: %v", err)
 	}
 	client := proto.NewFeedServiceClient(conn)
 	request := &proto.GetFeedRequest{
@@ -124,13 +124,16 @@ func ListNewsForFeed(limit int, cursor *time.Time) ([]FeedEntry, error) {
 	}
 	resp, err := client.GetFeed(context.Background(), request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get feed from reader: %v", err)
+		return FeedEntry{}, fmt.Errorf("failed to get feed from reader: %v", err)
 	}
-	return lo.Map(resp.Items, func(item *proto.FeedItem, _ int) FeedEntry {
-		return FeedEntry{
-			Type:      item.Type,
-			Data:      nex.DecodeMap(item.Content),
-			CreatedAt: time.UnixMilli(int64(item.CreatedAt)),
-		}
-	}), nil
+	var createdAt time.Time
+	return FeedEntry{
+		Type:      "reader.news",
+		CreatedAt: createdAt,
+		Data: lo.Map(resp.Items, func(item *proto.FeedItem, _ int) map[string]any {
+			cta := time.UnixMilli(int64(item.CreatedAt))
+			createdAt = lo.Ternary(createdAt.Before(cta), cta, createdAt)
+			return nex.DecodeMap(item.Content)
+		}),
+	}, nil
 }
