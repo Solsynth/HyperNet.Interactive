@@ -1,13 +1,18 @@
 package services
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"sort"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/proto"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -24,6 +29,13 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 
 	var feed []FeedEntry
 
+	// Planing the feed
+	limitF := float64(limit)
+	interCount := int(math.Ceil(limitF * 0.5))
+	fediCount := int(math.Ceil(limitF * 0.25))
+	newsCount := int(math.Ceil(limitF * 0.25))
+
+	// Internal posts
 	interTx, err := UniversalPostFilter(c, database.C)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare load interactive posts: %v", err)
@@ -31,17 +43,18 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 	if cursor != nil {
 		interTx = interTx.Where("published_at < ?", *cursor)
 	}
-	interPosts, err := ListPostForFeed(interTx, limit/2, user)
+	interPosts, err := ListPostForFeed(interTx, interCount, user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load interactive posts: %v", err)
 	}
 	feed = append(feed, interPosts...)
 
+	// Fediverse posts
 	fediTx := database.C
 	if cursor != nil {
 		fediTx = fediTx.Where("created_at < ?", *cursor)
 	}
-	fediPosts, err := ListFediversePostForFeed(fediTx, limit/2)
+	fediPosts, err := ListFediversePostForFeed(fediTx, fediCount)
 	if err != nil {
 		return feed, fmt.Errorf("failed to load fediverse posts: %v", err)
 	}
@@ -50,6 +63,13 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 	sort.Slice(feed, func(i, j int) bool {
 		return feed[i].CreatedAt.After(feed[j].CreatedAt)
 	})
+
+	// News today - from Reader
+	if news, err := ListNewsForFeed(newsCount, cursor); err != nil {
+		log.Error().Err(err).Msg("Failed to load news in getting feed...")
+	} else {
+		feed = append(feed, news...)
+	}
 
 	return feed, nil
 }
@@ -87,4 +107,29 @@ func ListFediversePostForFeed(tx *gorm.DB, limit int) ([]FeedEntry, error) {
 		}
 	})
 	return entries, nil
+}
+
+func ListNewsForFeed(limit int, cursor *time.Time) ([]FeedEntry, error) {
+	conn, err := gap.Nx.GetClientGrpcConn("re")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get grpc connection with reader: %v", err)
+	}
+	client := proto.NewFeedServiceClient(conn)
+	request := &proto.GetFeedRequest{
+		Limit: int64(limit),
+	}
+	if cursor != nil {
+		request.Cursor = lo.ToPtr(uint64(cursor.UnixMilli()))
+	}
+	resp, err := client.GetFeed(context.Background(), request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get feed from reader: %v", err)
+	}
+	return lo.Map(resp.Items, func(item *proto.FeedItem, _ int) FeedEntry {
+		return FeedEntry{
+			Type:      item.Type,
+			Data:      item.Content,
+			CreatedAt: time.UnixMilli(int64(item.CreatedAt)),
+		}
+	}), nil
 }
