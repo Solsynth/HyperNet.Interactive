@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -148,7 +147,7 @@ func createQuestion(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.new",
-			strconv.Itoa(int(item.ID)),
+			map[string]any{"post": item},
 			c,
 		)
 	}
@@ -262,7 +261,7 @@ func editQuestion(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.edit",
-			strconv.Itoa(int(item.ID)),
+			map[string]any{"post": item},
 			c,
 		)
 	}
@@ -344,7 +343,10 @@ func selectQuestionAnswer(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.edit.answer",
-			strconv.Itoa(int(item.ID)),
+			map[string]any{
+				"post":   item,
+				"answer": answer,
+			},
 			c,
 		)
 	}

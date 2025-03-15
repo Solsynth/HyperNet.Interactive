@@ -260,7 +260,7 @@ func deletePost(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.delete",
-			strconv.Itoa(int(item.ID)),
+			map[string]any{"post": item},
 			c,
 		)
 	}
@@ -302,7 +302,7 @@ func reactPost(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.react",
-			strconv.Itoa(int(res.ID)),
+			map[string]any{"post_id": res.ID, "reaction": reaction},
 			c,
 		)
 
@@ -327,7 +327,7 @@ func pinPost(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.pin",
-			strconv.Itoa(int(res.ID)),
+			map[string]any{"post": res},
 			c,
 		)
 		return c.SendStatus(fiber.StatusOK)
@@ -335,7 +335,7 @@ func pinPost(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.unpin",
-			strconv.Itoa(int(res.ID)),
+			map[string]any{"post": res},
 			c,
 		)
 		return c.SendStatus(fiber.StatusNoContent)

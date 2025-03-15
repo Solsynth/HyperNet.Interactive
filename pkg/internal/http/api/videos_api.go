@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -106,7 +105,7 @@ func createVideo(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.new",
-			strconv.Itoa(int(item.ID)),
+			map[string]any{"post": item},
 			c,
 		)
 	}
@@ -212,7 +211,7 @@ func editVideo(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.edit",
-			strconv.Itoa(int(item.ID)),
+			map[string]any{"post": item},
 			c,
 		)
 	}

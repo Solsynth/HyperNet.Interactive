@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
@@ -127,8 +126,8 @@ func createStory(c *fiber.Ctx) error {
 	} else {
 		_ = authkit.AddEventExt(
 			gap.Nx,
-			"posts.new",
-			strconv.Itoa(int(item.ID)),
+			"posts.edit",
+			map[string]interface{}{"post": item},
 			c,
 		)
 	}
@@ -236,7 +235,7 @@ func editStory(c *fiber.Ctx) error {
 		_ = authkit.AddEventExt(
 			gap.Nx,
 			"posts.edit",
-			strconv.Itoa(int(item.ID)),
+			map[string]interface{}{"post": item},
 			c,
 		)
 	}

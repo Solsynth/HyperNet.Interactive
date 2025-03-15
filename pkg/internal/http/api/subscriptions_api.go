@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
+
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/sec"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
-	"strconv"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
@@ -98,7 +98,7 @@ func subscribeToUser(c *fiber.Ctx) error {
 	_ = authkit.AddEventExt(
 		gap.Nx,
 		"posts.subscribe.users",
-		strconv.Itoa(int(otherUser.ID)),
+		map[string]any{"user": otherUser},
 		c,
 	)
 
@@ -125,7 +125,7 @@ func subscribeToTag(c *fiber.Ctx) error {
 	_ = authkit.AddEventExt(
 		gap.Nx,
 		"posts.subscribe.tags",
-		strconv.Itoa(int(tag.ID)),
+		map[string]any{"tag": tag},
 		c,
 	)
 
@@ -152,7 +152,7 @@ func subscribeToCategory(c *fiber.Ctx) error {
 	_ = authkit.AddEventExt(
 		gap.Nx,
 		"posts.subscribe.categories",
-		strconv.Itoa(int(category.ID)),
+		map[string]any{"category": category},
 		c,
 	)
 
@@ -179,7 +179,7 @@ func unsubscribeFromUser(c *fiber.Ctx) error {
 	_ = authkit.AddEventExt(
 		gap.Nx,
 		"posts.unsubscribe.users",
-		strconv.Itoa(int(otherUser.ID)),
+		map[string]any{"user": otherUser},
 		c,
 	)
 
@@ -206,7 +206,7 @@ func unsubscribeFromTag(c *fiber.Ctx) error {
 	_ = authkit.AddEventExt(
 		gap.Nx,
 		"posts.unsubscribe.tags",
-		strconv.Itoa(int(tag.ID)),
+		map[string]any{"tag": tag},
 		c,
 	)
 
@@ -233,7 +233,7 @@ func unsubscribeFromCategory(c *fiber.Ctx) error {
 	_ = authkit.AddEventExt(
 		gap.Nx,
 		"posts.unsubscribe.categories",
-		strconv.Itoa(int(category.ID)),
+		map[string]any{"category": category},
 		c,
 	)
 
