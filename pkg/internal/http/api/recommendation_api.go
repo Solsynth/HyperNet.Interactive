@@ -92,7 +92,7 @@ func getRecommendationFeed(c *fiber.Ctx) error {
 
 	var cursorTime *time.Time
 	if cursor > 0 {
-		cursorTime = lo.ToPtr(time.UnixMilli(int64(cursor)))
+		cursorTime = lo.ToPtr(time.UnixMilli(int64(cursor) + 1))
 	}
 
 	var userId *uint
