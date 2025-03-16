@@ -6,7 +6,7 @@ require (
 	git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2
 	git.solsynth.dev/hypernet/nexus v0.0.0-20250301065153-8ac88413e0e1
 	git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47
-	git.solsynth.dev/hypernet/passport v0.0.0-20250315083747-32e91e26013c
+	git.solsynth.dev/hypernet/passport v0.0.0-20250316041213-ecaace561632
 	git.solsynth.dev/hypernet/pusher v0.0.0-20250216145944-5fb769823a88
 	git.solsynth.dev/hypernet/wallet v0.0.0-20250129150034-87b94cdb5488
 	github.com/dgraph-io/ristretto v0.2.0

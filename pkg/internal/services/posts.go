@@ -94,7 +94,8 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
 				resp, err := ac.ListAvailableRealm(ctx, &aproto.LookupUserRealmRequest{
-					UserId: uint64(user.ID),
+					UserId:        uint64(user.ID),
+					IncludePublic: lo.ToPtr(true),
 				})
 				if err == nil {
 					realmList = lo.Map(resp.GetData(), func(item *aproto.RealmInfo, index int) uint {

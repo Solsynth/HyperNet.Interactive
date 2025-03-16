@@ -41,6 +41,8 @@ git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47 h1:fvu+bN
 git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47/go.mod h1:jvxq2qftz2v72x+24+cTFJdQKr9eHQTdk3KVR7cx36s=
 git.solsynth.dev/hypernet/passport v0.0.0-20250315083747-32e91e26013c h1:XB8EBX34WB2skmjaVFot5IlxKF2qFZ2SueG/Y9SiJ6Y=
 git.solsynth.dev/hypernet/passport v0.0.0-20250315083747-32e91e26013c/go.mod h1:k7MZQWYBpxlk3g9bx0HTh5C3m+MG/wr0hAiRM/VyAqs=
+git.solsynth.dev/hypernet/passport v0.0.0-20250316041213-ecaace561632 h1:rO0aFXOdNIHUx13UE3Q2RjeTdgouIOCMYlOycgdDUNg=
+git.solsynth.dev/hypernet/passport v0.0.0-20250316041213-ecaace561632/go.mod h1:+G1SHAmVGGjsmuCllZpH3jgpYGaYu/JzcXdgj6RQTOY=
 git.solsynth.dev/hypernet/pusher v0.0.0-20250216145944-5fb769823a88 h1:2HEENe9KUrdaJeNBzx9lsuXQGyzWqCgnLTKQnr8xFr8=
 git.solsynth.dev/hypernet/pusher v0.0.0-20250216145944-5fb769823a88/go.mod h1:ildzMtLagNsLK0Rkw4Hgk2TrrwqZnjwJIUx0MNZwcDY=
 git.solsynth.dev/hypernet/wallet v0.0.0-20250129150034-87b94cdb5488 h1:/9Ol+PfDQFAYtHo0kk6sxqiEsZ6epb6yUEsZJxy14Mk=
