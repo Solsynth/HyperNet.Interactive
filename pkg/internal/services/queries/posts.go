@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -88,18 +89,16 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	var usersId []uint
 
 	// Scan records that can be load egearly
-	for _, info := range posts {
+	var bodies []models.PostStoryBody
+	{
+		raw, _ := json.Marshal(posts)
+		json.Unmarshal(raw, &bodies)
+	}
+	for idx, info := range posts {
 		if info.Publisher.AccountID != nil {
 			usersId = append(usersId, *info.Publisher.AccountID)
 		}
-		if raw, ok := info.Body["attachments"].([]any); ok && len(raw) > 0 {
-			attachmentsRid := make([]string, 0, len(raw))
-			for _, v := range raw {
-				if str, ok := v.(string); ok {
-					attachmentsRid = append(attachmentsRid, str)
-				}
-			}
-		}
+		attachmentsRid = append(attachmentsRid, bodies[idx].Attachments...)
 	}
 	log.Debug().Int("attachments", len(attachmentsRid)).Int("users", len(usersId)).Msg("Scanned metadata to load for listing post...")
 
