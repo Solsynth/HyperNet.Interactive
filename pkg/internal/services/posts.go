@@ -12,6 +12,7 @@ import (
 
 	"git.solsynth.dev/hypernet/nexus/pkg/nex"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex/cachekit"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -678,16 +679,21 @@ func UpdatePostAttachmentMeta(item models.Post, old ...models.Post) error {
 		sameAsOld = reflect.DeepEqual(old[0].Body, item.Body)
 	}
 
+	var oldBody, newBody models.PostStoryBody
+	if len(old) > 0 {
+		raw, _ := json.Marshal(old[0].Body)
+		json.Unmarshal(raw, &oldBody)
+	}
+	{
+		raw, _ := json.Marshal(item.Body)
+		json.Unmarshal(raw, &newBody)
+	}
 	var minusAttachments, plusAttachments []string
 	if len(old) > 0 && !sameAsOld {
-		if val, ok := old[0].Body["attachments"].([]string); ok {
-			minusAttachments = append(minusAttachments, val...)
-		}
+		minusAttachments = append(minusAttachments, oldBody.Attachments...)
 	}
 	if len(old) == 0 || !sameAsOld {
-		if val, ok := item.Body["attachments"].([]string); ok {
-			plusAttachments = append(plusAttachments, val...)
-		}
+		plusAttachments = append(plusAttachments, newBody.Attachments...)
 	}
 	if dat, ok := item.Body["thumbnail"].(string); ok {
 		plusAttachments = append(plusAttachments, dat)
@@ -751,13 +757,18 @@ func DeletePost(item models.Post) error {
 	}
 
 	// Cleaning up related attachments
-	if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
+	var body models.PostStoryBody
+	{
+		raw, _ := json.Marshal(item.Body)
+		json.Unmarshal(raw, &body)
+	}
+	if len(body.Attachments) > 0 {
 		if item.Publisher.AccountID == nil {
 			return nil
 		}
 
 		err := filekit.CountAttachmentUsage(gap.Nx, &pproto.UpdateUsageRequest{
-			Rid: lo.Uniq(val),
+			Rid: lo.Uniq(body.Attachments),
 		})
 		if err != nil {
 			log.Error().Err(err).Msg("An error occurred when deleting post attachment...")
@@ -772,10 +783,16 @@ func DeletePostInBatch(items []models.Post) error {
 		return err
 	}
 
+	var bodies []models.PostStoryBody
+	{
+		raw, _ := json.Marshal(items)
+		json.Unmarshal(raw, &bodies)
+	}
+
 	var attachments []string
-	for _, item := range items {
-		if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
-			attachments = append(attachments, val...)
+	for idx := range items {
+		if len(bodies[idx].Attachments) > 0 {
+			attachments = append(attachments, bodies[idx].Attachments...)
 		}
 	}
 
