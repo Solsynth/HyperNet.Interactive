@@ -15,6 +15,7 @@ import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/http/exts"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services/queries"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 )
@@ -63,7 +64,7 @@ func getPost(c *fiber.Ctx) error {
 }
 
 func searchPost(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 0)
+	take := c.QueryInt("take", 10)
 	offset := c.QueryInt("offset", 0)
 
 	tx := database.C
@@ -113,7 +114,7 @@ func searchPost(c *fiber.Ctx) error {
 }
 
 func listPost(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 0)
+	take := c.QueryInt("take", 10)
 	offset := c.QueryInt("offset", 0)
 
 	tx := database.C
@@ -153,8 +154,47 @@ func listPost(c *fiber.Ctx) error {
 	})
 }
 
+func listPostV2(c *fiber.Ctx) error {
+	take := c.QueryInt("take", 10)
+	offset := c.QueryInt("offset", 0)
+
+	tx := database.C
+
+	var err error
+	if tx, err = services.UniversalPostFilter(c, tx); err != nil {
+		return err
+	}
+
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
+
+	countTx := tx
+	count, err := services.CountPost(countTx)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	items, err := queries.ListPostV2(tx, take, offset, "published_at DESC", userId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if c.QueryBool("truncate", true) {
+		for _, item := range items {
+			item = services.TruncatePostContent(item)
+		}
+	}
+
+	return c.JSON(fiber.Map{
+		"count": count,
+		"data":  items,
+	})
+}
+
 func listPostMinimal(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 0)
+	take := c.QueryInt("take", 10)
 	offset := c.QueryInt("offset", 0)
 
 	tx := database.C
@@ -190,7 +230,7 @@ func listPostMinimal(c *fiber.Ctx) error {
 }
 
 func listDraftPost(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 0)
+	take := c.QueryInt("take", 10)
 	offset := c.QueryInt("offset", 0)
 
 	if err := sec.EnsureAuthenticated(c); err != nil {

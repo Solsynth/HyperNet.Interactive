@@ -5,10 +5,10 @@ go 1.23.2
 require (
 	git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2
 	git.solsynth.dev/hypernet/nexus v0.0.0-20250329075932-d5422ab5b04c
-	git.solsynth.dev/hypernet/paperclip v0.0.0-20250310151112-1d866f317f47
-	git.solsynth.dev/hypernet/passport v0.0.0-20250316041213-ecaace561632
+	git.solsynth.dev/hypernet/paperclip v0.0.0-20250329141722-820d7a9f42e6
+	git.solsynth.dev/hypernet/passport v0.0.0-20250329100405-b327e0806279
 	git.solsynth.dev/hypernet/pusher v0.0.0-20250216145944-5fb769823a88
-	git.solsynth.dev/hypernet/wallet v0.0.0-20250129150034-87b94cdb5488
+	git.solsynth.dev/hypernet/wallet v0.0.0-20250323095812-468cd655f886
 	github.com/fatih/color v1.18.0
 	github.com/go-ap/activitypub v0.0.0-20250212090640-aeb6499ba581
 	github.com/go-playground/validator/v10 v10.22.1
@@ -33,6 +33,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eko/gocache/lib/v4 v4.2.0 // indirect
 	github.com/eko/gocache/store/redis/v4 v4.2.2 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
@@ -54,11 +55,14 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/minio/md5-simd v1.1.2 // indirect
+	github.com/minio/minio-go/v7 v7.0.70 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -73,6 +77,7 @@ require (
 	github.com/prometheus/procfs v0.13.0 // indirect
 	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/rs/xid v1.5.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect

@@ -59,6 +59,7 @@ func MapControllers(app *fiber.App, baseURL string) {
 		posts := api.Group("/posts").Name("Posts API")
 		{
 			posts.Get("/", listPost)
+			posts.Get("/v2", listPostV2)
 			posts.Get("/search", searchPost)
 			posts.Get("/minimal", listPostMinimal)
 			posts.Get("/drafts", listDraftPost)

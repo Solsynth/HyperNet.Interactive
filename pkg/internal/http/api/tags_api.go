@@ -18,7 +18,7 @@ func getTag(c *fiber.Ctx) error {
 }
 
 func listTags(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 0)
+	take := c.QueryInt("take", 10)
 	offset := c.QueryInt("offset", 0)
 	probe := c.Query("probe")
 

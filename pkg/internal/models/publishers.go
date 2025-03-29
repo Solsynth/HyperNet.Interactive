@@ -1,6 +1,9 @@
 package models
 
-import "git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+import (
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cruda"
+	"git.solsynth.dev/hypernet/passport/pkg/authkit/models"
+)
 
 const (
 	PublisherTypePersonal = iota
@@ -26,4 +29,7 @@ type Publisher struct {
 
 	RealmID   *uint `json:"realm_id"`
 	AccountID *uint `json:"account_id"`
+
+	Account models.Account `gorm:"-"`
+	Realm   models.Realm   `json:"-"`
 }
