@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const singularAttachmentFields = []string{"video", "thumbnail"}
+var singularAttachmentFields = []string{"video", "thumbnail"}
 
 // This api still is experimental and finally with replace the old one
 // Some changes between ListPost and ListPostV2:
