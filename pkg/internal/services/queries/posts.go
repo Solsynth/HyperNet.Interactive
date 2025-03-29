@@ -111,7 +111,7 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	}
 
 	// Putting information back to data
-	for _, item := range posts {
+	for idx, item := range posts {
 		var this []fmodels.Attachment
 		if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
 			this = lo.Filter(attachments, func(item fmodels.Attachment, _ int) bool {
@@ -125,6 +125,7 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 			}
 			return acc.ID == *item.Publisher.AccountID
 		})
+		posts[idx] = item
 	}
 
 	// Add post views for the user
