@@ -31,5 +31,5 @@ type Publisher struct {
 	AccountID *uint `json:"account_id"`
 
 	Account models.Account `gorm:"-"`
-	Realm   models.Realm   `json:"-"`
+	Realm   models.Realm   `gorm:"-"`
 }
