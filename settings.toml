@@ -14,8 +14,8 @@ print_routes = false
 [security]
 internal_public_key = "keys/internal_public_key.pem"
 
-[[fediverse.friends]]
-id = "mastodon-social"
-url = "https://mastodon.social"
-type = "mastodon"
-batch_size = 50
+#[[fediverse.friends]]
+#id = "mastodon-social"
+#url = "https://mastodon.social"
+#type = "mastodon"
+#batch_size = 50

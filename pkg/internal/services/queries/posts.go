@@ -1,8 +1,8 @@
 package queries
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
@@ -90,10 +90,12 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	var attachmentsRid []string
 	var usersId []uint
 
-	// Scan records that can be load egearly
+	// Scan records that can be load eagerly
 	var bodies []models.PostStoryBody
 	{
-		raw, _ := json.Marshal(posts)
+		raw, _ := json.Marshal(lo.Map(posts, func(item models.Post, _ int) map[string]any {
+			return item.Body
+		}))
 		json.Unmarshal(raw, &bodies)
 	}
 	for idx, info := range posts {
