@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"git.solsynth.dev/hypernet/nexus/pkg/nex"
+	"git.solsynth.dev/hypernet/nexus/pkg/nex/cachekit"
 	"github.com/gofiber/fiber/v2"
 
-	localCache "git.solsynth.dev/hypernet/interactive/pkg/internal/cache"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/nexus/pkg/proto"
 	"git.solsynth.dev/hypernet/paperclip/pkg/filekit"
@@ -21,9 +21,6 @@ import (
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	aproto "git.solsynth.dev/hypernet/passport/pkg/proto"
-	"github.com/eko/gocache/lib/v4/cache"
-	"github.com/eko/gocache/lib/v4/marshaler"
-	"github.com/eko/gocache/lib/v4/store"
 	"gorm.io/datatypes"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -53,16 +50,11 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 		RealmList     []uint `json:"realm"`
 	}
 
-	cacheManager := cache.New[any](localCache.S)
-	marshal := marshaler.New(cacheManager)
-	ctx := context.Background()
-
 	var self, allowlist, invisibleList, followList, realmList []uint
 
-	statusCacheKey := fmt.Sprintf("post-user-context-query#%d", user.ID)
-	statusCache, err := marshal.Get(ctx, statusCacheKey, new(userContextState))
+	statusCacheKey := fmt.Sprintf("post-user-filter#%d", user.ID)
+	state, err := cachekit.Get[userContextState](gap.Ca, statusCacheKey)
 	if err == nil {
-		state := statusCache.(*userContextState)
 		allowlist = state.Allowlist
 		invisibleList = state.InvisibleList
 		followList = state.FollowList
@@ -157,8 +149,8 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 			return item.ID
 		})
 
-		_ = marshal.Set(
-			ctx,
+		cachekit.Set(
+			gap.Ca,
 			statusCacheKey,
 			userContextState{
 				Allowlist:     allowlist,
@@ -167,8 +159,8 @@ func FilterPostWithUserContext(c *fiber.Ctx, tx *gorm.DB, user *authm.Account) *
 				FollowList:    followList,
 				Self:          self,
 			},
-			store.WithExpiration(2*time.Minute),
-			store.WithTags([]string{"post-user-context-query", fmt.Sprintf("user#%d", user.ID)}),
+			5*time.Minute,
+			fmt.Sprintf("user#%d", user.ID),
 		)
 	}
 
