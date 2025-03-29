@@ -11,6 +11,7 @@ import (
 	fmodels "git.solsynth.dev/hypernet/paperclip/pkg/filekit/models"
 	"git.solsynth.dev/hypernet/passport/pkg/authkit"
 	amodels "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
+	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -111,6 +112,7 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	}
 
 	// Putting information back to data
+	log.Info().Int("attachments", len(attachments)).Int("users", len(users)).Msg("Batch loaded metadata for listing post...")
 	for idx, item := range posts {
 		var this []fmodels.Attachment
 		if val, ok := item.Body["attachments"].([]string); ok && len(val) > 0 {
