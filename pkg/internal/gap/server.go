@@ -19,7 +19,7 @@ import (
 var (
 	Nx *nex.Conn
 	Px *pushcon.Conn
-	Ca *cachekit.CaConn
+	Ca *cachekit.Conn
 )
 
 func InitializeToNexus() error {
@@ -53,7 +53,7 @@ func InitializeToNexus() error {
 		return fmt.Errorf("error during initialize pushcon: %v", err)
 	}
 
-	Ca, err = cachekit.NewCaConn(Nx, 3*time.Second)
+	Ca, err = cachekit.NewConn(Nx, 3*time.Second)
 	if err != nil {
 		return fmt.Errorf("error during initialize cachekit: %v", err)
 	}
