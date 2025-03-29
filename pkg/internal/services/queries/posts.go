@@ -92,8 +92,13 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 		if info.Publisher.AccountID != nil {
 			usersId = append(usersId, *info.Publisher.AccountID)
 		}
-		if val, ok := info.Body["attachments"].([]string); ok && len(val) > 0 {
-			attachmentsRid = append(attachmentsRid, val...)
+		if raw, ok := info.Body["attachments"].([]any); ok && len(raw) > 0 {
+			attachmentsRid := make([]string, 0, len(raw))
+			for _, v := range raw {
+				if str, ok := v.(string); ok {
+					attachmentsRid = append(attachmentsRid, str)
+				}
+			}
 		}
 	}
 	log.Debug().Int("attachments", len(attachmentsRid)).Int("users", len(usersId)).Msg("Scanned metadata to load for listing post...")
