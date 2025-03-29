@@ -17,6 +17,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const singularAttachmentFields = []string{"video", "thumbnail"}
+
 // This api still is experimental and finally with replace the old one
 // Some changes between ListPost and ListPostV2:
 //   - Post reply to and repost to are not included
@@ -99,6 +101,13 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 			usersId = append(usersId, *info.Publisher.AccountID)
 		}
 		attachmentsRid = append(attachmentsRid, bodies[idx].Attachments...)
+		for _, field := range singularAttachmentFields {
+			if raw, ok := info.Body[field]; ok {
+				if str, ok := raw.(string); ok {
+					attachmentsRid = append(attachmentsRid, str)
+				}
+			}
+		}
 	}
 	log.Debug().Int("attachments", len(attachmentsRid)).Int("users", len(usersId)).Msg("Scanned metadata to load for listing post...")
 
@@ -120,18 +129,19 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	log.Info().Int("attachments", len(attachments)).Int("users", len(users)).Msg("Batch loaded metadata for listing post...")
 	for idx, item := range posts {
 		var this []fmodels.Attachment
-		var val []string
-		if raw, ok := item.Body["attachments"].([]any); ok && len(raw) > 0 {
-			val = lo.Map(raw, func(v any, _ int) string {
-				return v.(string) // Safe if you're sure all elements are strings
-			})
-		} else if raw, ok := item.Body["attachments"].([]string); ok {
-			val = raw
-		}
-		if len(val) > 0 {
+		if len(bodies[idx].Attachments) > 0 {
 			this = lo.Filter(attachments, func(item fmodels.Attachment, _ int) bool {
-				return lo.Contains(val, item.Rid)
+				return lo.Contains(bodies[idx].Attachments, item.Rid)
 			})
+		}
+		for _, field := range singularAttachmentFields {
+			if raw, ok := item.Body[field]; ok {
+				if str, ok := raw.(string); ok {
+					item.Body[field] = lo.FindOrElse(this, fmodels.Attachment{}, func(item fmodels.Attachment) bool {
+						return item.Rid == str
+					})
+				}
+			}
 		}
 		item.Body["attachments"] = this
 		item.Publisher.Account = lo.FindOrElse(users, amodels.Account{}, func(acc amodels.Account) bool {
