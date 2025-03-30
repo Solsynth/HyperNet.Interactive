@@ -47,7 +47,7 @@ func listPostReplies(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC", userId)
+	items, err := services.ListPostV1(tx, take, offset, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -90,7 +90,7 @@ func listPostFeaturedReply(c *fiber.Ctx) error {
 		tx = services.FilterPostWithTag(tx, c.Query("tag"))
 	}
 
-	items, err := services.ListPost(tx, take, 0, "(COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0)) DESC, published_at DESC", userId)
+	items, err := services.ListPostV1(tx, take, 0, "(COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0)) DESC, published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

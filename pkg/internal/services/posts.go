@@ -339,14 +339,7 @@ func PreloadGeneral(tx *gorm.DB) *gorm.DB {
 		Preload("Tags").
 		Preload("Categories").
 		Preload("Publisher").
-		Preload("ReplyTo").
-		Preload("ReplyTo.Publisher").
-		Preload("ReplyTo.Tags").
-		Preload("ReplyTo.Categories").
-		Preload("RepostTo").
-		Preload("RepostTo.Publisher").
-		Preload("RepostTo.Tags").
-		Preload("RepostTo.Categories")
+		Preload("Poll")
 }
 
 func GetPost(tx *gorm.DB, id uint) (models.Post, error) {
@@ -403,7 +396,7 @@ func CountPostReactions(id uint) int64 {
 	return count
 }
 
-func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint, noReact ...bool) ([]*models.Post, error) {
+func ListPostV1(tx *gorm.DB, take int, offset int, order any, user *uint, noReact ...bool) ([]models.Post, error) {
 	if take > 100 {
 		take = 100
 	}
@@ -415,77 +408,64 @@ func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint, noReact 
 		tx = tx.Offset(offset)
 	}
 
-	var items []*models.Post
-	if err := PreloadGeneral(tx).
-		Order(order).
-		Find(&items).Error; err != nil {
-		return items, err
+	tx = tx.Preload("Tags").
+		Preload("Categories").
+		Preload("Publisher")
+
+	// Fetch posts
+	var posts []models.Post
+	if err := tx.Order(order).Find(&posts).Error; err != nil {
+		return nil, err
 	}
 
-	idx := lo.Map(items, func(item *models.Post, index int) uint {
-		return item.ID
-	})
+	// If no posts found, return early
+	if len(posts) == 0 {
+		return posts, nil
+	}
 
-	// Load reactions
-	if len(noReact) <= 0 || !noReact[0] {
-		if mapping, err := BatchListPostReactions(database.C.Where("post_id IN ?", idx), "post_id"); err != nil {
-			return items, err
-		} else {
-			itemMap := lo.SliceToMap(items, func(item *models.Post) (uint, *models.Post) {
-				return item.ID, item
-			})
+	// Collect post IDs
+	idx := make([]uint, len(posts))
+	itemMap := make(map[uint]*models.Post, len(posts))
+	for i, item := range posts {
+		idx[i] = item.ID
+		itemMap[item.ID] = &item
+	}
 
-			for k, v := range mapping {
-				if post, ok := itemMap[k]; ok {
-					post.Metric = models.PostMetric{
-						ReactionList: v,
-					}
-				}
+	// Batch load reactions
+	if mapping, err := BatchListPostReactions(database.C.Where("post_id IN ?", idx), "post_id"); err != nil {
+		return posts, err
+	} else {
+		for postID, reactions := range mapping {
+			if post, exists := itemMap[postID]; exists {
+				post.Metric.ReactionList = reactions
 			}
 		}
 	}
 
-	// Load replies
-	if len(noReact) <= 0 || !noReact[0] {
-		var replies []struct {
-			PostID uint
-			Count  int64
-		}
-
-		if err := database.C.Model(&models.Post{}).
-			Select("reply_id as post_id, COUNT(id) as count").
-			Where("reply_id IN (?)", idx).
-			Group("post_id").
-			Scan(&replies).Error; err != nil {
-			return items, err
-		}
-
-		itemMap := lo.SliceToMap(items, func(item *models.Post) (uint, *models.Post) {
-			return item.ID, item
-		})
-
-		list := map[uint]int64{}
-		for _, info := range replies {
-			list[info.PostID] = info.Count
-		}
-
-		for k, v := range list {
-			if post, ok := itemMap[k]; ok {
-				post.Metric = models.PostMetric{
-					ReactionList: post.Metric.ReactionList,
-					ReplyCount:   v,
-				}
-			}
+	// Batch load reply counts efficiently
+	var replies []struct {
+		PostID uint
+		Count  int64
+	}
+	if err := database.C.Model(&models.Post{}).
+		Select("reply_id as post_id, COUNT(id) as count").
+		Where("reply_id IN (?)", idx).
+		Group("post_id").
+		Find(&replies).Error; err != nil {
+		return posts, err
+	}
+	for _, info := range replies {
+		if post, exists := itemMap[info.PostID]; exists {
+			post.Metric.ReplyCount = info.Count
 		}
 	}
 
+	// Add post views for the user
 	if user != nil {
-		AddPostViews(lo.Map(items, func(item *models.Post, index int) models.Post {
-			return *item
-		}), *user)
+		AddPostViews(posts, *user)
 	}
 
-	return items, nil
+	return posts, nil
 }
 
 func ListPostMinimal(tx *gorm.DB, take int, offset int, order any) ([]*models.Post, error) {

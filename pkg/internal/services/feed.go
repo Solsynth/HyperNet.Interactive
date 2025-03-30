@@ -79,14 +79,14 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 // Only manage to pulling the content only
 
 func ListPostForFeed(tx *gorm.DB, limit int, user *uint) ([]FeedEntry, error) {
-	posts, err := ListPost(tx, limit, -1, "published_at DESC", user)
+	posts, err := ListPostV1(tx, limit, -1, "published_at DESC", user)
 	if err != nil {
 		return nil, err
 	}
-	entries := lo.Map(posts, func(post *models.Post, _ int) FeedEntry {
+	entries := lo.Map(posts, func(post models.Post, _ int) FeedEntry {
 		return FeedEntry{
 			Type:      "interactive.post",
-			Data:      TruncatePostContent(*post),
+			Data:      TruncatePostContent(post),
 			CreatedAt: post.CreatedAt,
 		}
 	})

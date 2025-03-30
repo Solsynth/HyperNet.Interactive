@@ -65,7 +65,7 @@ func apUserOutbox(c *fiber.Ctx) error {
 	}
 
 	var activities []activitypub.Item
-	if posts, err := services.ListPost(tx, limit, (page-1)*limit, "published_at DESC", nil); err != nil {
+	if posts, err := services.ListPostV1(tx, limit, (page-1)*limit, "published_at DESC", nil); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	} else {
 		for _, post := range posts {

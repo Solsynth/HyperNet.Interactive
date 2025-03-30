@@ -33,7 +33,7 @@ func listPinnedPost(c *fiber.Ctx) error {
 		userId = &user.ID
 	}
 
-	items, err := services.ListPost(tx, 100, 0, "published_at DESC", userId)
+	items, err := services.ListPostV1(tx, 100, 0, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

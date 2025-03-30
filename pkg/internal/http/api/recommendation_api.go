@@ -29,7 +29,7 @@ func listRecommendation(c *fiber.Ctx) error {
 	}
 
 	tx := database.C.Where("id IN ?", postIdx)
-	newPosts, err := services.ListPost(tx, featuredMax, 0, "id ASC", userId)
+	newPosts, err := services.ListPostV1(tx, featuredMax, 0, "id ASC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -67,7 +67,7 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "RANDOM()", userId)
+	items, err := services.ListPostV1(tx, take, offset, "RANDOM()", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -92,7 +92,7 @@ func getRecommendationFeed(c *fiber.Ctx) error {
 
 	var cursorTime *time.Time
 	if cursor > 0 {
-		cursorTime = lo.ToPtr(time.UnixMilli(int64(cursor) + 1))
+		cursorTime = lo.ToPtr(time.UnixMilli(int64(cursor - 1)))
 	}
 
 	var userId *uint

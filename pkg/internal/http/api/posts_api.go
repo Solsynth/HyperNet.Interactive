@@ -26,17 +26,26 @@ func getPost(c *fiber.Ctx) error {
 	var item models.Post
 	var err error
 
-	tx := database.C
+	var userId *uint
+	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
+		userId = &user.ID
+	}
 
+	tx := database.C
 	if tx, err = services.UniversalPostFilter(c, tx, services.UniversalPostFilterConfig{
-		ShowReply: true,
-		ShowDraft: true,
+		ShowReply:     true,
+		ShowDraft:     true,
+		ShowCollapsed: true,
 	}); err != nil {
 		return err
 	}
 
 	if numericId, paramErr := strconv.Atoi(id); paramErr == nil {
-		item, err = services.GetPost(tx, uint(numericId))
+		if c.Get("X-API-Version", "1") == "2" {
+			item, err = queries.GetPost(tx, uint(numericId), userId)
+		} else {
+			item, err = services.GetPost(tx, uint(numericId))
+		}
 	} else {
 		segments := strings.Split(id, ":")
 		if len(segments) != 2 {
@@ -44,7 +53,11 @@ func getPost(c *fiber.Ctx) error {
 		}
 		area := segments[0]
 		alias := segments[1]
-		item, err = services.GetPostByAlias(tx, alias, area)
+		if c.Get("X-API-Version", "1") == "2" {
+			item, err = queries.GetPostByAlias(tx, alias, area, userId)
+		} else {
+			item, err = services.GetPostByAlias(tx, alias, area)
+		}
 	}
 
 	if err != nil {
@@ -88,22 +101,27 @@ func searchPost(c *fiber.Ctx) error {
 		userId = &user.ID
 	}
 
+	var count int64
 	countTx := tx
-	count, err := services.CountPost(countTx)
+	count, err = services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC", userId)
+	var items []models.Post
+
+	if c.Get("X-API-Version", "1") == "2" {
+		items, err = queries.ListPost(tx, take, offset, "published_at DESC", userId)
+	} else {
+		items, err = services.ListPostV1(tx, take, offset, "published_at DESC", userId)
+	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	if c.QueryBool("truncate", true) {
 		for _, item := range items {
-			if item != nil {
-				item = lo.ToPtr(services.TruncatePostContent(*item))
-			}
+			item = services.TruncatePostContent(item)
 		}
 	}
 
@@ -129,54 +147,20 @@ func listPost(c *fiber.Ctx) error {
 		userId = &user.ID
 	}
 
+	var count int64
 	countTx := tx
-	count, err := services.CountPost(countTx)
+	count, err = services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "published_at DESC", userId)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	var items []models.Post
+
+	if c.Get("X-API-Version", "1") == "2" {
+		items, err = queries.ListPost(tx, take, offset, "published_at DESC", userId)
+	} else {
+		items, err = services.ListPostV1(tx, take, offset, "published_at DESC", userId)
 	}
-
-	if c.QueryBool("truncate", true) {
-		for _, item := range items {
-			if item != nil {
-				item = lo.ToPtr(services.TruncatePostContent(*item))
-			}
-		}
-	}
-
-	return c.JSON(fiber.Map{
-		"count": count,
-		"data":  items,
-	})
-}
-
-func listPostV2(c *fiber.Ctx) error {
-	take := c.QueryInt("take", 10)
-	offset := c.QueryInt("offset", 0)
-
-	tx := database.C
-
-	var err error
-	if tx, err = services.UniversalPostFilter(c, tx); err != nil {
-		return err
-	}
-
-	var userId *uint
-	if user, authenticated := c.Locals("user").(authm.Account); authenticated {
-		userId = &user.ID
-	}
-
-	countTx := tx
-	count, err := services.CountPost(countTx)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	}
-
-	items, err := queries.ListPostV2(tx, take, offset, "published_at DESC", userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -238,6 +222,7 @@ func listDraftPost(c *fiber.Ctx) error {
 	}
 	user := c.Locals("user").(authm.Account)
 
+	var err error
 	tx := services.FilterPostWithAuthorDraft(database.C, user.ID)
 
 	var userId *uint
@@ -245,21 +230,27 @@ func listDraftPost(c *fiber.Ctx) error {
 		userId = &user.ID
 	}
 
-	count, err := services.CountPost(tx)
+	var count int64
+	countTx := tx
+	count, err = services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPost(tx, take, offset, "created_at DESC", userId, true)
+	var items []models.Post
+
+	if c.Get("X-API-Version", "1") == "2" {
+		items, err = queries.ListPost(tx, take, offset, "published_at DESC", userId)
+	} else {
+		items, err = services.ListPostV1(tx, take, offset, "published_at DESC", userId)
+	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
 	if c.QueryBool("truncate", true) {
 		for _, item := range items {
-			if item != nil {
-				item = lo.ToPtr(services.TruncatePostContent(*item))
-			}
+			item = services.TruncatePostContent(item)
 		}
 	}
 

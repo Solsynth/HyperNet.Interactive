@@ -40,7 +40,7 @@ func getWhatsNew(c *fiber.Ctx) error {
 		order = "published_at DESC, (COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0)) DESC"
 	}
 
-	items, err := services.ListPost(tx, 10, 0, order, userId)
+	items, err := services.ListPostV1(tx, 10, 0, order, userId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

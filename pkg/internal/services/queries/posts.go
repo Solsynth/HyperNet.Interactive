@@ -2,6 +2,7 @@ package queries
 
 import (
 	"fmt"
+
 	"github.com/goccy/go-json"
 
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
@@ -19,47 +20,18 @@ import (
 
 var singularAttachmentFields = []string{"video", "thumbnail"}
 
-// This api still is experimental and finally with replace the old one
-// Some changes between ListPost and ListPostV2:
-//   - Post reply to and repost to are not included
-func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]models.Post, error) {
-	if take > 100 {
-		take = 100
-	}
-
-	if take >= 0 {
-		tx = tx.Limit(take)
-	}
-	if offset >= 0 {
-		tx = tx.Offset(offset)
-	}
-
-	tx = tx.Preload("Tags").
-		Preload("Categories").
-		Preload("Publisher")
-
-	// Fetch posts
-	var posts []models.Post
-	if err := tx.Order(order).Find(&posts).Error; err != nil {
-		return nil, err
-	}
-
-	// If no posts found, return early
-	if len(posts) == 0 {
-		return posts, nil
-	}
-
+func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 	// Collect post IDs
-	idx := make([]uint, len(posts))
-	itemMap := make(map[uint]*models.Post, len(posts))
-	for i, item := range posts {
+	idx := make([]uint, len(in))
+	itemMap := make(map[uint]*models.Post, len(in))
+	for i, item := range in {
 		idx[i] = item.ID
 		itemMap[item.ID] = &item
 	}
 
 	// Batch load reactions
 	if mapping, err := services.BatchListPostReactions(database.C.Where("post_id IN ?", idx), "post_id"); err != nil {
-		return posts, err
+		return in, err
 	} else {
 		for postID, reactions := range mapping {
 			if post, exists := itemMap[postID]; exists {
@@ -78,7 +50,7 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 		Where("reply_id IN (?)", idx).
 		Group("post_id").
 		Find(&replies).Error; err != nil {
-		return posts, err
+		return in, err
 	}
 	for _, info := range replies {
 		if post, exists := itemMap[info.PostID]; exists {
@@ -93,12 +65,12 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	// Scan records that can be load eagerly
 	var bodies []models.PostStoryBody
 	{
-		raw, _ := json.Marshal(lo.Map(posts, func(item models.Post, _ int) map[string]any {
+		raw, _ := json.Marshal(lo.Map(in, func(item models.Post, _ int) map[string]any {
 			return item.Body
 		}))
 		json.Unmarshal(raw, &bodies)
 	}
-	for idx, info := range posts {
+	for idx, info := range in {
 		if info.Publisher.AccountID != nil {
 			usersId = append(usersId, *info.Publisher.AccountID)
 		}
@@ -117,19 +89,19 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 	attachmentsRid = lo.Uniq(attachmentsRid)
 	attachments, err := filekit.ListAttachment(gap.Nx, attachmentsRid)
 	if err != nil {
-		return posts, fmt.Errorf("failed to load attachments: %v", err)
+		return in, fmt.Errorf("failed to load attachments: %v", err)
 	}
 
 	// Batch load publisher users
 	usersId = lo.Uniq(usersId)
 	users, err := authkit.ListUser(gap.Nx, usersId)
 	if err != nil {
-		return posts, fmt.Errorf("failed to load users: %v", err)
+		return in, fmt.Errorf("failed to load users: %v", err)
 	}
 
 	// Putting information back to data
 	log.Info().Int("attachments", len(attachments)).Int("users", len(users)).Msg("Batch loaded metadata for listing post...")
-	for idx, item := range posts {
+	for idx, item := range in {
 		var this []fmodels.Attachment
 		if len(bodies[idx].Attachments) > 0 {
 			this = lo.Filter(attachments, func(item fmodels.Attachment, _ int) bool {
@@ -152,7 +124,90 @@ func ListPostV2(tx *gorm.DB, take int, offset int, order any, user *uint) ([]mod
 			}
 			return acc.ID == *item.Publisher.AccountID
 		})
-		posts[idx] = item
+		in[idx] = item
+	}
+
+	return in, nil
+}
+
+func GetPost(tx *gorm.DB, id uint, user *uint) (models.Post, error) {
+	var post models.Post
+	if err := tx.Preload("Tags").
+		Preload("Categories").
+		Preload("Publisher").
+		Preload("Poll").
+		First(&post, id).Error; err != nil {
+		return post, err
+	}
+
+	out, err := CompletePostMeta(post)
+	if err != nil {
+		return post, err
+	}
+
+	if user != nil {
+		services.AddPostView(post, *user)
+	}
+
+	return out[0], nil
+}
+
+func GetPostByAlias(tx *gorm.DB, alias, area string, user *uint) (models.Post, error) {
+	var post models.Post
+	if err := tx.Preload("Tags").
+		Preload("Categories").
+		Preload("Publisher").
+		Preload("Poll").
+		Where("alias = ?", alias).
+		Where("alias_prefix = ?", area).
+		First(&post).Error; err != nil {
+		return post, err
+	}
+
+	out, err := CompletePostMeta(post)
+	if err != nil {
+		return post, err
+	}
+
+	if user != nil {
+		services.AddPostView(post, *user)
+	}
+
+	return out[0], nil
+}
+
+func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint) ([]models.Post, error) {
+	if take > 100 {
+		take = 100
+	}
+
+	if take >= 0 {
+		tx = tx.Limit(take)
+	}
+	if offset >= 0 {
+		tx = tx.Offset(offset)
+	}
+
+	tx = tx.Preload("Tags").
+		Preload("Categories").
+		Preload("Publisher").
+		Preload("Poll")
+
+	// Fetch posts
+	var posts []models.Post
+	if err := tx.Order(order).Find(&posts).Error; err != nil {
+		return nil, err
+	}
+
+	// If no posts found, return early
+	if len(posts) == 0 {
+		return posts, nil
+	}
+
+	// Load data eagerly
+	posts, err := CompletePostMeta(posts...)
+	if err != nil {
+		return nil, err
 	}
 
 	// Add post views for the user
