@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2
 	git.solsynth.dev/hypernet/nexus v0.0.0-20250329075932-d5422ab5b04c
-	git.solsynth.dev/hypernet/paperclip v0.0.0-20250329141722-820d7a9f42e6
+	git.solsynth.dev/hypernet/paperclip v0.0.0-20250330164539-11d54c7c7874
 	git.solsynth.dev/hypernet/passport v0.0.0-20250329100405-b327e0806279
 	git.solsynth.dev/hypernet/pusher v0.0.0-20250216145944-5fb769823a88
 	git.solsynth.dev/hypernet/wallet v0.0.0-20250323095812-468cd655f886
