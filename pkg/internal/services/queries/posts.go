@@ -26,7 +26,7 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 	itemMap := make(map[uint]*models.Post, len(in))
 	for i, item := range in {
 		idx[i] = item.ID
-		itemMap[item.ID] = &item
+		itemMap[item.ID] = &in[i]
 	}
 
 	// Batch load reactions
@@ -59,8 +59,10 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 	}
 
 	// Batch load some metadata
+	var err error
 	var attachmentsRid []string
 	var usersId []uint
+	var realmsId []uint
 
 	// Scan records that can be load eagerly
 	var bodies []models.PostStoryBody
@@ -73,6 +75,9 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 	for idx, info := range in {
 		if info.Publisher.AccountID != nil {
 			usersId = append(usersId, *info.Publisher.AccountID)
+		}
+		if info.RealmID != nil {
+			realmsId = append(realmsId, *info.RealmID)
 		}
 		attachmentsRid = append(attachmentsRid, bodies[idx].Attachments...)
 		for _, field := range singularAttachmentFields {
@@ -87,16 +92,32 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 
 	// Batch load attachments
 	attachmentsRid = lo.Uniq(attachmentsRid)
-	attachments, err := filekit.ListAttachment(gap.Nx, attachmentsRid)
-	if err != nil {
-		return in, fmt.Errorf("failed to load attachments: %v", err)
+	var attachments []fmodels.Attachment
+	if len(attachmentsRid) > 0 {
+		attachments, err = filekit.ListAttachment(gap.Nx, attachmentsRid)
+		if err != nil {
+			return in, fmt.Errorf("failed to load attachments: %v", err)
+		}
 	}
 
 	// Batch load publisher users
 	usersId = lo.Uniq(usersId)
-	users, err := authkit.ListUser(gap.Nx, usersId)
-	if err != nil {
-		return in, fmt.Errorf("failed to load users: %v", err)
+	var users []amodels.Account
+	if len(users) > 0 {
+		users, err = authkit.ListUser(gap.Nx, usersId)
+		if err != nil {
+			return in, fmt.Errorf("failed to load users: %v", err)
+		}
+	}
+
+	// Batch load posts realm
+	realmsId = lo.Uniq(realmsId)
+	var realms []amodels.Realm
+	if len(realmsId) > 0 {
+		realms, err = authkit.ListRealm(gap.Nx, realmsId)
+		if err != nil {
+			return in, fmt.Errorf("failed to load realms: %v", err)
+		}
 	}
 
 	// Putting information back to data
@@ -118,12 +139,16 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 			}
 		}
 		item.Body["attachments"] = this
-		item.Publisher.Account = lo.FindOrElse(users, amodels.Account{}, func(acc amodels.Account) bool {
-			if item.Publisher.AccountID == nil {
-				return false
-			}
-			return acc.ID == *item.Publisher.AccountID
-		})
+		if item.Publisher.AccountID != nil {
+			item.Publisher.Account = lo.FindOrElse(users, amodels.Account{}, func(acc amodels.Account) bool {
+				return acc.ID == *item.Publisher.AccountID
+			})
+		}
+		if item.RealmID != nil {
+			item.Realm = lo.ToPtr(lo.FindOrElse(realms, amodels.Realm{}, func(realm amodels.Realm) bool {
+				return realm.ID == *item.RealmID
+			}))
+		}
 		in[idx] = item
 	}
 

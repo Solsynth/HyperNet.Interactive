@@ -428,7 +428,7 @@ func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint, noReact 
 	itemMap := make(map[uint]*models.Post, len(posts))
 	for i, item := range posts {
 		idx[i] = item.ID
-		itemMap[item.ID] = &item
+		itemMap[item.ID] = &posts[i]
 	}
 
 	// Batch load reactions
