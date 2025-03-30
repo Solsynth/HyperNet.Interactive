@@ -396,7 +396,7 @@ func CountPostReactions(id uint) int64 {
 	return count
 }
 
-func ListPostV1(tx *gorm.DB, take int, offset int, order any, user *uint, noReact ...bool) ([]models.Post, error) {
+func ListPost(tx *gorm.DB, take int, offset int, order any, user *uint, noReact ...bool) ([]models.Post, error) {
 	if take > 100 {
 		take = 100
 	}

@@ -113,7 +113,7 @@ func searchPost(c *fiber.Ctx) error {
 	if c.Get("X-API-Version", "1") == "2" {
 		items, err = queries.ListPost(tx, take, offset, "published_at DESC", userId)
 	} else {
-		items, err = services.ListPostV1(tx, take, offset, "published_at DESC", userId)
+		items, err = services.ListPost(tx, take, offset, "published_at DESC", userId)
 	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -159,7 +159,7 @@ func listPost(c *fiber.Ctx) error {
 	if c.Get("X-API-Version", "1") == "2" {
 		items, err = queries.ListPost(tx, take, offset, "published_at DESC", userId)
 	} else {
-		items, err = services.ListPostV1(tx, take, offset, "published_at DESC", userId)
+		items, err = services.ListPost(tx, take, offset, "published_at DESC", userId)
 	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
@@ -242,7 +242,7 @@ func listDraftPost(c *fiber.Ctx) error {
 	if c.Get("X-API-Version", "1") == "2" {
 		items, err = queries.ListPost(tx, take, offset, "published_at DESC", userId)
 	} else {
-		items, err = services.ListPostV1(tx, take, offset, "published_at DESC", userId)
+		items, err = services.ListPost(tx, take, offset, "published_at DESC", userId)
 	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())

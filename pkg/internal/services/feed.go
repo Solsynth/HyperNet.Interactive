@@ -10,6 +10,7 @@ import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services/queries"
 	"git.solsynth.dev/hypernet/interactive/pkg/proto"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex"
 	"github.com/gofiber/fiber/v2"
@@ -44,7 +45,7 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 	if cursor != nil {
 		interTx = interTx.Where("published_at < ?", *cursor)
 	}
-	interPosts, err := ListPostForFeed(interTx, interCount, user)
+	interPosts, err := ListPostForFeed(interTx, interCount, user, c.Get("X-API-Version", "1"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load interactive posts: %v", err)
 	}
@@ -78,8 +79,14 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 // We assume the database context already handled the filtering and pagination
 // Only manage to pulling the content only
 
-func ListPostForFeed(tx *gorm.DB, limit int, user *uint) ([]FeedEntry, error) {
-	posts, err := ListPostV1(tx, limit, -1, "published_at DESC", user)
+func ListPostForFeed(tx *gorm.DB, limit int, user *uint, api string) ([]FeedEntry, error) {
+	var posts []models.Post
+	var err error
+	if api == "2" {
+		posts, err = queries.ListPost(tx, limit, -1, "published_at DESC", user)
+	} else {
+		posts, err = ListPost(tx, limit, -1, "published_at DESC", user)
+	}
 	if err != nil {
 		return nil, err
 	}

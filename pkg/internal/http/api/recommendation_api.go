@@ -6,6 +6,7 @@ import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services/queries"
 	authm "git.solsynth.dev/hypernet/passport/pkg/authkit/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
@@ -29,7 +30,13 @@ func listRecommendation(c *fiber.Ctx) error {
 	}
 
 	tx := database.C.Where("id IN ?", postIdx)
-	newPosts, err := services.ListPostV1(tx, featuredMax, 0, "id ASC", userId)
+	var newPosts []models.Post
+	var err error
+	if c.Get("X-API-Version", "1") == "2" {
+		newPosts, err = queries.ListPost(tx, featuredMax, 0, "id ASC", userId)
+	} else {
+		newPosts, err = services.ListPost(tx, featuredMax, 0, "id ASC", userId)
+	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -67,7 +74,13 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	items, err := services.ListPostV1(tx, take, offset, "RANDOM()", userId)
+	var items []models.Post
+	var err error
+	if c.Get("X-API-Version", "1") == "2" {
+		items, err = queries.ListPost(tx, take, offset, "RANDOM()", userId)
+	} else {
+		items, err = services.ListPost(tx, take, offset, "RANDOM()", userId)
+	}
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
