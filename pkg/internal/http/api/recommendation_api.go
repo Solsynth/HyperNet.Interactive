@@ -15,7 +15,9 @@ import (
 func listRecommendation(c *fiber.Ctx) error {
 	const featuredMax = 5
 
-	posts, err := services.GetFeaturedPosts(featuredMax)
+	var err error
+	var posts []models.Post
+	posts, err = services.GetFeaturedPosts(featuredMax)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
@@ -31,7 +33,6 @@ func listRecommendation(c *fiber.Ctx) error {
 
 	tx := database.C.Where("id IN ?", postIdx)
 	var newPosts []models.Post
-	var err error
 	if c.Get("X-API-Version", "1") == "2" {
 		newPosts, err = queries.ListPost(tx, featuredMax, 0, "id ASC", userId)
 	} else {
@@ -56,9 +57,8 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 	take := c.QueryInt("take", 10)
 	offset := c.QueryInt("offset", 0)
 
-	tx := database.C
-
 	var err error
+	tx := database.C
 	if tx, err = services.UniversalPostFilter(c, tx); err != nil {
 		return err
 	}
@@ -68,14 +68,14 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 		userId = &user.ID
 	}
 
+	var count int64
 	countTx := tx
-	count, err := services.CountPost(countTx)
+	count, err = services.CountPost(countTx)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	var items []models.Post
-	var err error
 	if c.Get("X-API-Version", "1") == "2" {
 		items, err = queries.ListPost(tx, take, offset, "RANDOM()", userId)
 	} else {
@@ -111,7 +111,7 @@ func getRecommendationFeed(c *fiber.Ctx) error {
 		userId = &user.ID
 	}
 
-	entries, err := services.GetFeed(c, limit, userId, cursorTime)
+	entries, err := queries.GetFeed(c, limit, userId, cursorTime)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

@@ -1,4 +1,4 @@
-package services
+package queries
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/database"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/gap"
 	"git.solsynth.dev/hypernet/interactive/pkg/internal/models"
-	"git.solsynth.dev/hypernet/interactive/pkg/internal/services/queries"
+	"git.solsynth.dev/hypernet/interactive/pkg/internal/services"
 	"git.solsynth.dev/hypernet/interactive/pkg/proto"
 	"git.solsynth.dev/hypernet/nexus/pkg/nex"
 	"github.com/gofiber/fiber/v2"
@@ -38,7 +38,7 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 	newsCount := int(math.Ceil(limitF * 0.25))
 
 	// Internal posts
-	interTx, err := UniversalPostFilter(c, database.C)
+	interTx, err := services.UniversalPostFilter(c, database.C)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare load interactive posts: %v", err)
 	}
@@ -83,9 +83,9 @@ func ListPostForFeed(tx *gorm.DB, limit int, user *uint, api string) ([]FeedEntr
 	var posts []models.Post
 	var err error
 	if api == "2" {
-		posts, err = queries.ListPost(tx, limit, -1, "published_at DESC", user)
-	} else {
 		posts, err = ListPost(tx, limit, -1, "published_at DESC", user)
+	} else {
+		posts, err = services.ListPost(tx, limit, -1, "published_at DESC", user)
 	}
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func ListPostForFeed(tx *gorm.DB, limit int, user *uint, api string) ([]FeedEntr
 	entries := lo.Map(posts, func(post models.Post, _ int) FeedEntry {
 		return FeedEntry{
 			Type:      "interactive.post",
-			Data:      TruncatePostContent(post),
+			Data:      services.TruncatePostContent(post),
 			CreatedAt: post.CreatedAt,
 		}
 	})
