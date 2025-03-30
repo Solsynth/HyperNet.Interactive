@@ -69,9 +69,6 @@ func apUserOutbox(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	} else {
 		for _, post := range posts {
-			if post == nil {
-				continue
-			}
 			var content string
 			if val, ok := post.Body["content"].(string); ok {
 				content = val

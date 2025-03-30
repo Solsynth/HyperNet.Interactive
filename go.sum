@@ -4,8 +4,6 @@ git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2 h1:dPBdssDI
 git.solsynth.dev/hypernet/insight v0.0.0-20250129172551-974266b2c1d2/go.mod h1:NKSTeRc1mgg726iaCLEBoYEcVroIrGU5w2rnGf92LWE=
 git.solsynth.dev/hypernet/nexus v0.0.0-20250329075932-d5422ab5b04c h1:XgdTgJxSAQuCbiG15hN5pY6chzcz8sX3Onm2itS+Ufs=
 git.solsynth.dev/hypernet/nexus v0.0.0-20250329075932-d5422ab5b04c/go.mod h1:5tk62VQ1DcbR0EAN2jAOqYxHiegUPEC805JlfQ/G19I=
-git.solsynth.dev/hypernet/paperclip v0.0.0-20250329095638-8f91649d2570 h1:Nmm7zNpE/9ni/JFRO331D+w0pGz6IBKiNCSyFFbqWFA=
-git.solsynth.dev/hypernet/paperclip v0.0.0-20250329095638-8f91649d2570/go.mod h1:TdFsd/W3e04GAFVOWXBP9acSYF+YpmSeSdocnvt/4IY=
 git.solsynth.dev/hypernet/paperclip v0.0.0-20250329141722-820d7a9f42e6 h1:n7MgY8/TRJZXO4EJKmRqmzJQmE0E0X02Vf/pNJjRfms=
 git.solsynth.dev/hypernet/paperclip v0.0.0-20250329141722-820d7a9f42e6/go.mod h1:TdFsd/W3e04GAFVOWXBP9acSYF+YpmSeSdocnvt/4IY=
 git.solsynth.dev/hypernet/passport v0.0.0-20250329100405-b327e0806279 h1:7eL9za4zGsoKImiCXkpGFdXcSYhdegSRVsXfBJq7Q5I=

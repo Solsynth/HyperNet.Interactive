@@ -33,8 +33,8 @@ func listRecommendation(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	newPostMap := lo.SliceToMap(newPosts, func(item *models.Post) (uint, models.Post) {
-		return item.ID, *item
+	newPostMap := lo.SliceToMap(newPosts, func(item models.Post) (uint, models.Post) {
+		return item.ID, item
 	})
 
 	// Revert the position & truncate
@@ -74,9 +74,7 @@ func listRecommendationShuffle(c *fiber.Ctx) error {
 
 	if c.QueryBool("truncate", true) {
 		for _, item := range items {
-			if item != nil {
-				item = lo.ToPtr(services.TruncatePostContent(*item))
-			}
+			item = services.TruncatePostContent(item)
 		}
 	}
 
