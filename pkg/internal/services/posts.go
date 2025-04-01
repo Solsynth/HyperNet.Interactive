@@ -505,21 +505,28 @@ func NotifyReplying(item models.Post, user models.Publisher) error {
 	content, ok := item.Body["content"].(string)
 	if !ok {
 		content = "Posted a post"
+	} else {
+		content = TruncatePostContentShort(content)
 	}
-	var title *string
-	title, _ = item.Body["title"].(*string)
-	item.Publisher = user
-	if err := NotifyUserSubscription(user, item, content, title); err != nil {
-		log.Error().Err(err).Msg("An error occurred when notifying subscriptions user by user...")
-	}
-	for _, tag := range item.Tags {
-		if err := NotifyTagSubscription(tag, user, item, content, title); err != nil {
-			log.Error().Err(err).Msg("An error occurred when notifying subscriptions user by tag...")
-		}
-	}
-	for _, category := range item.Categories {
-		if err := NotifyCategorySubscription(category, user, item, content, title); err != nil {
-			log.Error().Err(err).Msg("An error occurred when notifying subscriptions user by category...")
+
+	var op models.Post
+	if err := database.C.
+		Where("id = ?", item.ReplyID).
+		Preload("Publisher").
+		First(&op).Error; err == nil {
+		if op.Publisher.AccountID != nil && op.Publisher.ID != user.ID {
+			log.Debug().Uint("user", *op.Publisher.AccountID).Msg("Notifying the original poster their post got replied...")
+			err = NotifyPosterAccount(
+				op.Publisher,
+				op,
+				"Post got replied",
+				fmt.Sprintf("%s (%s) replied you: %s", user.Nick, user.Name, content),
+				"interactive.reply",
+				fmt.Sprintf("%s replied your post #%d", user.Nick, *item.ReplyID),
+			)
+			if err != nil {
+				log.Error().Err(err).Msg("An error occurred when notifying user...")
+			}
 		}
 	}
 	return nil
