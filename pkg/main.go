@@ -43,7 +43,6 @@ func main() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Panic().Err(err).Msg("An error occurred when loading settings.")
 	}
-	services.ReadFriendConfig()
 
 	// Connect to nexus
 	if err := gap.InitializeToNexus(); err != nil {
@@ -68,7 +67,6 @@ func main() {
 	// Configure timed tasks
 	quartz := cron.New(cron.WithLogger(cron.VerbosePrintfLogger(&log.Logger)))
 	quartz.AddFunc("@every 5m", services.FlushPostViews)
-	quartz.AddFunc("@every 5m", services.FetchFediverseTimedTask)
 	quartz.Start()
 
 	// App
