@@ -26,6 +26,10 @@ func NewFlag(post models.Post, account uint) (models.PostFlag, error) {
 }
 
 func FlagCalculateCollapseStatus(post models.Post) error {
+	if post.TotalViews <= 2 {
+		return nil
+	}
+
 	collapseLimit := 0.5
 
 	var flagCount int64
