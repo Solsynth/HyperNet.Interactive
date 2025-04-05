@@ -67,6 +67,7 @@ func MapControllers(app *fiber.App, baseURL string) {
 			posts.Post("/:postId/flag", createFlag)
 			posts.Post("/:postId/react", reactPost)
 			posts.Post("/:postId/pin", pinPost)
+			posts.Post("/:postId/uncollapse", uncollapsePost)
 			posts.Delete("/:postId", deletePost)
 
 			posts.Get("/:postId/replies", listPostReplies)

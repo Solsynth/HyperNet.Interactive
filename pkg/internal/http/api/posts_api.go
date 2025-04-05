@@ -372,3 +372,17 @@ func pinPost(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
+
+func uncollapsePost(c *fiber.Ctx) error {
+	id, _ := c.ParamsInt("postId", 0)
+
+	if err := sec.EnsureGrantedPerm(c, "UncollapsePosts", true); err != nil {
+		return err
+	}
+
+	if err := database.C.Model(&models.Post{}).Where("id = ?", id).Update("is_collapsed", false).Error; err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
