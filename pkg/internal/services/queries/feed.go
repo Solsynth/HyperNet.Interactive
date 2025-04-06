@@ -33,8 +33,8 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 
 	// Planing the feed
 	limitF := float64(limit)
-	interCount := int(math.Ceil(limitF * 0.5))
-	readerCount := int(math.Ceil(limitF * 0.5))
+	interCount := int(math.Ceil(limitF * 0.7))
+	readerCount := int(math.Ceil(limitF * 0.3))
 
 	// Internal posts
 	interTx, err := services.UniversalPostFilter(c, database.C)
@@ -55,7 +55,7 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 	})
 
 	// News today - from Reader
-	if news, err := ListNewsForFeed(readerCount, cursor); err != nil {
+	if news, err := ListReaderPagesForFeed(readerCount, cursor); err != nil {
 		log.Error().Err(err).Msg("Failed to load news in getting feed...")
 	} else {
 		feed = append(feed, news...)
@@ -70,10 +70,13 @@ func GetFeed(c *fiber.Ctx, limit int, user *uint, cursor *time.Time) ([]FeedEntr
 func ListPostForFeed(tx *gorm.DB, limit int, user *uint, api string) ([]FeedEntry, error) {
 	var posts []models.Post
 	var err error
+	rankOrder := `(COALESCE(total_upvote, 0) - COALESCE(total_downvote, 0) + 
+		LOG(1 + COALESCE(total_aggressive_views, 0))) /
+		POWER(EXTRACT(EPOCH FROM NOW() - published_at) / 3600 + 2, 1.5) DESC`
 	if api == "2" {
-		posts, err = ListPost(tx, limit, -1, "published_at DESC", user)
+		posts, err = ListPost(tx, limit, -1, rankOrder, user)
 	} else {
-		posts, err = services.ListPost(tx, limit, -1, "published_at DESC", user)
+		posts, err = services.ListPost(tx, limit, -1, rankOrder, user)
 	}
 	if err != nil {
 		return nil, err
@@ -88,7 +91,7 @@ func ListPostForFeed(tx *gorm.DB, limit int, user *uint, api string) ([]FeedEntr
 	return entries, nil
 }
 
-func ListNewsForFeed(limit int, cursor *time.Time) ([]FeedEntry, error) {
+func ListReaderPagesForFeed(limit int, cursor *time.Time) ([]FeedEntry, error) {
 	conn, err := gap.Nx.GetClientGrpcConn("re")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get grpc connection with reader: %v", err)
