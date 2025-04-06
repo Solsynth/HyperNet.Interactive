@@ -2,6 +2,7 @@ package queries
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/goccy/go-json"
 
@@ -82,7 +83,7 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 		attachmentsRid = append(attachmentsRid, bodies[idx].Attachments...)
 		for _, field := range singularAttachmentFields {
 			if raw, ok := info.Body[field]; ok {
-				if str, ok := raw.(string); ok {
+				if str, ok := raw.(string); ok && !strings.HasPrefix(str, "http") {
 					attachmentsRid = append(attachmentsRid, str)
 				}
 			}

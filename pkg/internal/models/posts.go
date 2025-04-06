@@ -102,6 +102,7 @@ type PostVideoBody struct {
 	Description *string           `json:"description"`
 	Location    *string           `json:"location"`
 	Video       string            `json:"video"`
+	Renderer    *string           `json:"renderer"`
 	IsLive      bool              `json:"is_live"`
 	IsLiveEnded bool              `json:"is_live_ended"`
 	Subtitles   map[string]string `json:"subtitles"`

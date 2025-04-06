@@ -40,6 +40,8 @@ func createVideo(c *fiber.Ctx) error {
 		VisibleUsers   []uint            `json:"visible_users_list"`
 		InvisibleUsers []uint            `json:"invisible_users_list"`
 		Visibility     *int8             `json:"visibility"`
+		Renderer       *string           `json:"renderer"`
+		IsLive         bool              `json:"is_live"`
 		IsDraft        bool              `json:"is_draft"`
 		Realm          *uint             `json:"realm"`
 	}
@@ -57,9 +59,11 @@ func createVideo(c *fiber.Ctx) error {
 		Thumbnail:   data.Thumbnail,
 		Video:       data.Video,
 		Title:       data.Title,
+		Renderer:    data.Renderer,
 		Description: data.Description,
 		Location:    data.Location,
 		Subtitles:   data.Subtitles,
+		IsLive:      data.IsLive,
 	}
 
 	var bodyMapping map[string]any
@@ -136,6 +140,8 @@ func editVideo(c *fiber.Ctx) error {
 		VisibleUsers   []uint            `json:"visible_users_list"`
 		InvisibleUsers []uint            `json:"invisible_users_list"`
 		Visibility     *int8             `json:"visibility"`
+		Renderer       *string           `json:"renderer"`
+		IsLive         bool              `json:"is_live"`
 		IsDraft        bool              `json:"is_draft"`
 	}
 
@@ -178,6 +184,8 @@ func editVideo(c *fiber.Ctx) error {
 		Description: data.Description,
 		Location:    data.Location,
 		Subtitles:   data.Subtitles,
+		Renderer:    data.Renderer,
+		IsLive:      data.IsLive,
 	}
 
 	var bodyMapping map[string]any
