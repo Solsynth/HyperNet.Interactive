@@ -133,9 +133,12 @@ func CompletePostMeta(in ...models.Post) ([]models.Post, error) {
 		for _, field := range singularAttachmentFields {
 			if raw, ok := item.Body[field]; ok {
 				if str, ok := raw.(string); ok {
-					item.Body[field] = lo.FindOrElse(this, fmodels.Attachment{}, func(item fmodels.Attachment) bool {
+					result := lo.FindOrElse(this, fmodels.Attachment{}, func(item fmodels.Attachment) bool {
 						return item.Rid == str
 					})
+					if result.ID != 0 {
+						item.Body[field] = result
+					}
 				}
 			}
 		}
